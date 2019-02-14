@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    
+          
+    <RelativeLayout
+        android:id="@+id/popup_window"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:id="@+id/VideoFrameRateWindow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp" >
+
+            <TextView 
+                android:id="@+id/VideoFrameRateNotify" 
+                android:layout_width="30dp" 
+                android:layout_weight="1"
+                android:layout_height="32dp" 
+                android:orientation="horizontal"
+                android:text="视频编码帧率:" 
+                android:textSize="13dp"
+                android:textColor="#00ffff" />
+
+            <TextView
+                android:id="@+id/VideoFrameRateTV"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:text="0fps"
+                android:textSize="13dp" />
+
+        </LinearLayout>
+ 
+        <LinearLayout
+            android:id="@+id/VideoBitRateWindow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/VideoFrameRateWindow"
+            android:orientation="horizontal"
+            android:layout_marginTop="0dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp" >
+
+            <TextView 
+                android:id="@+id/VideoBitRateNotify" 
+                android:layout_width="30dp" 
+                android:layout_weight="1"
+                android:layout_height="32dp" 
+                android:orientation="horizontal"
+                android:text="视频编码码率:" 
+                android:textSize="13dp"
+                android:textColor="#00ffff" />
+
+            <TextView
+                android:id="@+id/VideoBitRateTV"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:padding="3dp"
+                android:text="0kbps"
+                android:textSize="13dp" />
+
+        </LinearLayout>
+        
+        <LinearLayout
+            android:id="@+id/AudioBitRateWindow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/VideoBitRateWindow"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp" >
+
+            <TextView 
+                android:id="@+id/AudioBitRateNotify" 
+                android:layout_width="30dp" 
+                android:layout_weight="1"
+                android:layout_height="32dp" 
+                android:orientation="horizontal"
+                android:text="音频编码码率:" 
+                android:textSize="13dp"
+                android:textColor="#00ffff" />
+
+            <TextView
+                android:id="@+id/AudioBitRateTV"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:text="0fps"
+                android:textSize="13dp" />
+
+        </LinearLayout>
+ 
+        <LinearLayout
+            android:id="@+id/TotalRealBitRateWindow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/AudioBitRateWindow"
+            android:orientation="horizontal"
+            android:layout_marginTop="10dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp" >
+
+            <TextView 
+                android:id="@+id/TotalRealBitRateNotify" 
+                android:layout_width="30dp" 
+                android:layout_weight="1"
+                android:layout_height="32dp" 
+                android:orientation="horizontal"
+                android:text="总的实际发送码率:" 
+                android:textSize="13dp"
+                android:textColor="#00ffff" />
+
+            <TextView
+                android:id="@+id/TotalRealBitRateTV"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:text="0fps"
+                android:textSize="13dp" />
+
+        </LinearLayout>
+        
+        <LinearLayout
+            android:id="@+id/ResolutionWindow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/TotalRealBitRateWindow"
+            android:orientation="horizontal"
+            android:layout_marginTop="0dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp" >
+
+            <TextView 
+                android:id="@+id/ResolutionNotify" 
+                android:layout_width="30dp" 
+                android:layout_weight="1"
+                android:layout_height="32dp" 
+                android:orientation="horizontal"
+                android:text="清晰度:" 
+                android:textSize="13dp"
+                android:textColor="#00ffff" />
+
+            <TextView
+                android:id="@+id/ResolutionTV"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:padding="3dp"
+                android:singleLine="false"
+                android:text="流畅"
+                android:textSize="13dp" />
+
+        </LinearLayout>
+    </RelativeLayout>
+</LinearLayout>

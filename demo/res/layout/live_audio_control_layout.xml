@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/control_layout"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true"
+    android:paddingBottom="10dp"
+    android:paddingRight="10dp"
+    tools:showIn="@layout/live_player_activity">
+
+    <TextView
+        android:id="@+id/input_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:background="@drawable/input_icon_selector"
+        android:gravity="center" />
+
+    <ImageButton
+        android:id="@+id/switch_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/input_btn"
+        android:background="@drawable/switch_camera_selector"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/hd_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/input_btn"
+        android:background="@drawable/ic_mode_normal"
+        android:layout_alignParentBottom="true"
+        android:gravity="center"
+        android:text="高清"
+        android:visibility="gone"
+        android:textColor="@color/color_black_333333" />
+
+    <ImageButton
+        android:id="@+id/beauty_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/hd_btn"
+        android:background="@drawable/ic_beauty_open_selector"
+        android:visibility="gone" />
+
+    <ImageButton
+        android:id="@+id/music_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/beauty_btn"
+        android:background="@drawable/background_music_selector"
+        android:gravity="center" />
+
+    <TextView
+        android:id="@+id/interaction_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/music_btn"
+        android:background="@drawable/ic_interaction_normal"
+        android:gravity="center" />
+
+    <ImageButton
+        android:id="@+id/gift_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/interaction_btn"
+        android:background="@drawable/gift_icon_selector" />
+
+    <ImageButton
+        android:id="@+id/shot_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/gift_btn"
+        android:background="@drawable/screen_shot_selector"
+        android:visibility="gone" />
+
+    <ImageButton
+        android:id="@+id/share_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/shot_btn"
+        android:background="@drawable/ic_share_selector" />
+
+    <ImageButton
+        android:id="@+id/control_extend_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/screen_shot_selector"
+        android:visibility="gone" />
+</RelativeLayout>

@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/video_mirror_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:showIn="@layout/live_player_activity"
+    android:visibility="gone">
+
+    <RelativeLayout
+        android:id="@+id/video_mirror_blank_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"></RelativeLayout>
+
+    <LinearLayout
+
+        android:id="@+id/video_mirror_content_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/color_black_bf000000"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:id="@+id/fl_title"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/video_mirror_title_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:text="镜像设置"
+                android:textColor="@color/white"
+                android:textSize="17dp" />
+
+        </RelativeLayout>
+
+
+        <View
+            android:layout_marginRight="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/color_white_b3ffffff"></View>
+
+        <RelativeLayout
+            android:id="@+id/video_mirror_local_rl"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
+
+            <TextView
+                android:id="@+id/video_mirror_local_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:enabled="false"
+                android:text="本地镜像（仅影响自己）"
+                android:textColor="@color/white"
+                android:textSize="17dp" />
+            <com.netease.nim.chatroom.demo.im.ui.widget.SwitchButton
+                android:id="@+id/video_mirror_local_sb"
+                android:layout_width="58dip"
+                android:layout_height="36.67dip"
+                android:layout_centerVertical="true"
+                android:layout_alignParentRight="true" />
+
+        </RelativeLayout>
+        <View
+            android:layout_marginRight="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/color_white_b3ffffff"></View>
+
+        <RelativeLayout
+            android:id="@+id/video_mirror_push_rl"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
+
+            <TextView
+                android:id="@+id/video_mirror_push_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:enabled="false"
+                android:text="推流镜像（仅影响观众）"
+                android:textColor="@color/white"
+                android:textSize="17dp" />
+
+            <com.netease.nim.chatroom.demo.im.ui.widget.SwitchButton
+                android:id="@+id/video_mirror_push_sb"
+                android:layout_width="58dip"
+                android:layout_height="36.67dip"
+                android:layout_centerVertical="true"
+                android:layout_alignParentRight="true" />
+
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0.5dp"
+            android:background="@color/color_white_b3ffffff"></View>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/video_mirror_button_cancel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:paddingBottom="10dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:paddingTop="10dp"
+                android:text="取消"
+                android:textColor="@color/white"
+                android:textSize="17dp" />
+
+
+            <View
+                android:layout_width="0.5dp"
+                android:layout_height="match_parent"
+                android:background="@color/color_white_b3ffffff"></View>
+
+            <TextView
+                android:id="@+id/video_mirror_button_confirm"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:paddingBottom="10dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:paddingTop="10dp"
+                android:text="确定"
+                android:textColor="@color/white"
+                android:textSize="17dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/audience_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:id="@+id/video_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/black">
+
+        <com.netease.nim.chatroom.demo.thirdparty.video.NEVideoView
+            android:id="@+id/video_view"
+            android:layout_width="match_parent"
+            android:layout_centerHorizontal="true"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop" />
+
+        <com.netease.nimlib.sdk.avchat.model.AVChatTextureViewRenderer
+            android:id="@+id/video_render"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/audio_mode_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/audio_mode_bg"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:background="@drawable/ic_master_audio" />
+    </RelativeLayout>
+
+    <!-- 连麦观众画面 -->
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+
+        <include layout="@layout/interaction_group_layout" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/interaction_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <RelativeLayout
+            android:id="@+id/room_owner_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp">
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="15dp"
+                android:background="@drawable/gift_background"
+                android:paddingRight="15dp">
+
+                <TextView
+                    android:id="@+id/master_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="35dp"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/white"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/online_count_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/master_name"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginLeft="35dp"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/white"
+                    android:textSize="11sp" />
+            </RelativeLayout>
+
+            <ImageView
+                android:id="@+id/master_head"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:background="@drawable/avatar" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/room_name_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/room_owner_layout"
+            android:layout_marginLeft="10dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/alpha_gray_background"
+            android:paddingBottom="5dp"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:paddingTop="5dp">
+
+            <TextView
+                android:id="@+id/room_id_tip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:text="房间ID："
+                android:textColor="@color/white"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/room_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="5dp"
+                android:layout_toRightOf="@id/room_id_tip"
+                android:textColor="@color/white"
+                android:textSize="13sp" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/close_btn"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_alignParentRight="true">
+
+            <TextView
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_centerInParent="true"
+                android:background="@drawable/icon_close_selector" />
+        </RelativeLayout>
+
+        <LinearLayout
+            android:id="@+id/pk_info_layout"
+            android:layout_width="match_parent"
+            android:layout_height="38dp"
+            android:background="@drawable/pk_audience_background"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="50dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/pk_from_tv"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="程小勺"
+                android:textColor="@color/white"
+                android:textSize="14dp" />
+
+            <TextView
+                android:id="@+id/pk_to_tv"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="程小勺"
+                android:textColor="@color/white"
+                android:textSize="14dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/messageActivityBottomLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <include layout="@layout/nim_message_activity_text_layout" />
+
+            <com.netease.nim.chatroom.demo.im.session.emoji.EmoticonPickerView
+                android:id="@+id/emoticon_picker_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <com.netease.nim.chatroom.demo.entertainment.ui.MessageListViewEx
+            android:id="@+id/messageListView"
+            style="@style/list_view"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginBottom="50dp"
+            android:cacheColorHint="@android:color/transparent"
+            android:divider="@null"
+            android:fadingEdge="none"
+            android:focusable="false"
+            android:listSelector="@android:color/transparent"
+            android:scrollbars="vertical" />
+
+        <include
+            android:id="@+id/gift_animation_view"
+            layout="@layout/gift_layout"
+            android:layout_width="220dp"
+            android:layout_height="50dp"
+            android:layout_above="@id/messageListView"
+            android:layout_marginBottom="3dp" />
+
+        <include
+            android:id="@+id/gift_animation_view_up"
+            layout="@layout/gift_layout"
+            android:layout_width="220dp"
+            android:layout_height="50dp"
+            android:layout_above="@id/gift_animation_view"
+            android:layout_marginBottom="3dp" />
+
+        <com.netease.nim.chatroom.demo.im.ui.periscope.PeriscopeLayout
+            android:id="@+id/periscope"
+            android:layout_width="70dp"
+            android:layout_height="350dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_marginBottom="40dp" />
+
+        <LinearLayout
+            android:id="@+id/control_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"></LinearLayout>
+
+
+
+        <LinearLayout
+            android:id="@+id/on_mic_name_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@+id/close_btn"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/on_mic_name_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:background="@drawable/gift_background"
+                android:padding="5dp"
+                android:textColor="@color/white"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/on_mic_name_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:background="@drawable/gift_background"
+                android:padding="5dp"
+                android:textColor="@color/white"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/on_mic_name_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="15dp"
+                android:background="@drawable/gift_background"
+                android:padding="5dp"
+                android:textColor="@color/white"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+    <include layout="@layout/audience_interaction_layout" />
+
+    <RelativeLayout
+        android:id="@+id/gift_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentBottom="true"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/send_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="@color/color_black_bf000000"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/send_gift_btn"
+                android:layout_width="60dp"
+                android:layout_height="35dp"
+                android:layout_gravity="right"
+                android:layout_marginBottom="7dp"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="7dp"
+                android:background="@drawable/g_white_btn_selector"
+                android:text="赠送"
+                android:textColor="@color/color_black_333333"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <GridView
+            android:id="@+id/gift_grid_view"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_above="@id/send_layout"
+            android:background="@color/color_black_bf000000"
+            android:listSelector="@drawable/item_border_selected"
+            android:numColumns="4" />
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/prepared_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:paddingTop="100dp"
+        android:text="准备中，请等待..."
+        android:textColor="@color/white"
+        android:textSize="17sp" />
+
+    <include layout="@layout/audience_finish_layout" />
+</RelativeLayout>

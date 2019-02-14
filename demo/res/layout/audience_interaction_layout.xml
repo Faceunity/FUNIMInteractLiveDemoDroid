@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/audience_interaction_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:visibility="gone"
+    tools:showIn="@layout/audience_activity">
+
+    <!-- 视频模式的连线显示 -->
+    <RelativeLayout
+        android:id="@+id/init_layout"
+        android:layout_width="match_parent"
+        android:layout_height="158dp"
+        android:layout_alignParentBottom="true"
+        android:background="@color/white">
+
+        <TextView
+            android:id="@+id/interaction_tip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:text="@string/i_want_to"
+            android:textColor="@color/color_black_333333"
+            android:textSize="17sp" />
+
+        <Button
+            android:id="@+id/member_link_btn"
+            android:layout_width="190dp"
+            android:layout_height="40dp"
+            android:layout_below="@id/interaction_tip"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="23dp"
+            android:background="@drawable/nim_blue_btn"
+            android:text="@string/video_link" />
+
+        <Button
+            android:id="@+id/audio_link_btn"
+            android:layout_width="190dp"
+            android:layout_height="40dp"
+            android:layout_below="@id/member_link_btn"
+            android:background="@drawable/nim_blue_btn"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:text="@string/audio_link" />
+    </RelativeLayout>
+
+    <!-- 音频模式的连线显示 -->
+    <RelativeLayout
+        android:id="@+id/audio_mode_init_layout"
+        android:layout_width="match_parent"
+        android:layout_height="158dp"
+        android:layout_alignParentBottom="true"
+        android:background="@color/white">
+
+        <TextView
+            android:id="@+id/audio_mode_interaction_tip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:text="@string/i_want_to"
+            android:textColor="@color/color_black_333333"
+            android:textSize="17sp" />
+
+        <Button
+            android:id="@+id/audio_mode_link"
+            android:layout_width="190dp"
+            android:layout_height="40dp"
+            android:layout_below="@id/audio_mode_interaction_tip"
+            android:background="@drawable/nim_blue_btn"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="35dp"
+            android:text="@string/audio_link" />
+    </RelativeLayout>
+
+    <!-- 已经申请连线的布局显示 -->
+    <RelativeLayout
+        android:id="@+id/applying_layout"
+        android:layout_width="match_parent"
+        android:layout_height="158dp"
+        android:layout_alignParentBottom="true"
+        android:background="@color/white"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/applying_tip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:textColor="@color/color_black_333333"
+            android:text="已经与主播连线"
+            android:textSize="12sp" />
+
+        <ImageView
+            android:id="@+id/apply_master_avatar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_below="@id/applying_tip"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="11dp"
+            android:background="@drawable/avatar" />
+
+        <TextView
+            android:id="@+id/apply_master_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/apply_master_avatar"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="6dp"
+            android:textColor="@color/color_black_999999"
+            android:textSize="9sp" />
+
+        <Button
+            android:id="@+id/cancel_link_btn"
+            android:layout_width="190dp"
+            android:layout_height="40dp"
+            android:layout_below="@id/apply_master_name"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="15dp"
+            android:background="@drawable/nim_cancel_record_red_bg"
+            android:text="@string/cancel_link" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/tips_layout"
+        android:layout_width="match_parent"
+        android:layout_height="158dp"
+        android:layout_alignParentBottom="true"
+        android:background="@color/white"
+        android:visibility="gone">
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="38dp"
+            android:id="@+id/title_layout"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/title_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:layout_marginTop="8dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:text="互动提醒"
+                android:textColor="@color/black"
+                android:textSize="18dp" />
+
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/tips_msg"
+            android:layout_below="@id/title_layout"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:layout_gravity="center_horizontal"
+            android:gravity="center"
+            android:padding="10dp"
+            android:text="主播正在PK，请PK结束后发起互动申请。"
+            android:textColor="@color/black"
+            android:textSize="15dp" />
+
+
+        <Button
+            android:layout_below="@id/tips_msg"
+            android:id="@+id/tips_btn"
+            android:layout_width="150dp"
+            android:layout_height="50dp"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="10dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:background="@drawable/pk_dialog_cancel_background"
+            android:paddingBottom="8dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="8dp"
+            android:text="知道了"
+            android:textSize="17dp" />
+    </RelativeLayout>
+</RelativeLayout>

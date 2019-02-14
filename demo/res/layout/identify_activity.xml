@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/identify_activity_rl"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/login_bg"
+    android:orientation="vertical">
+
+    <android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary" />
+
+    </android.support.design.widget.AppBarLayout>
+
+    <RelativeLayout
+        android:id="@+id/net_detect_state_rl"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:paddingTop="60dp">
+
+        <ImageView
+            android:id="@+id/net_detect_state_iv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/icon_net_detect_wifi_enable_0" />
+
+        <ImageView
+            android:id="@+id/net_detect_refresh_iv"
+            android:layout_width="23dip"
+            android:layout_height="23dip"
+            android:layout_alignBottom="@+id/net_detect_state_iv"
+            android:layout_alignRight="@+id/net_detect_state_iv"
+            android:layout_marginBottom="15dp"
+            android:layout_marginRight="15dp"
+            android:padding="5dp"
+            android:src="@drawable/icon_net_detect_refresh" />
+
+        <ProgressBar
+            android:id="@+id/net_detect_loading_pb"
+            android:layout_width="23dip"
+            android:layout_height="23dip"
+            android:layout_alignBottom="@+id/net_detect_state_iv"
+            android:layout_alignRight="@+id/net_detect_state_iv"
+            android:layout_marginBottom="15dp"
+            android:layout_marginRight="15dp"
+            android:indeterminate="true"
+            android:indeterminateDrawable="@drawable/net_detect_progress_bar"
+            android:padding="5dp"
+            android:visibility="gone" />
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/net_detect_state_content_ll"
+        android:layout_width="140dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/net_detect_state_rl"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="15dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/net_detect_state_content_tv"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:text="网络状况：一般"
+            android:textColor="@color/white"
+            android:textSize="15dp" />
+
+        <ImageView
+            android:id="@+id/net_detect_state_content_iv"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:padding="5dp"
+            android:visibility="visible"
+            android:src="@drawable/icon_net_detect_info" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/net_detect_time_tips_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/net_detect_state_content_ll"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:text="(5分钟前检测)"
+        android:textColor="@color/color_blue_afd2fd"
+        android:textSize="13dp" />
+
+
+    <Button
+        android:id="@+id/audience_btn"
+        android:layout_width="match_parent"
+        android:layout_height="49dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="78dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:background="@drawable/g_white_btn_selector"
+        android:drawableLeft="@drawable/icon_audience"
+        android:drawablePadding="-65dp"
+        android:paddingLeft="65dp"
+        android:text="@string/audience_client"
+        android:textColor="@color/color_blue_238efa"
+        android:textSize="17dp" />
+
+    <Button
+        android:id="@+id/master_btn"
+        android:layout_width="match_parent"
+        android:layout_height="49dp"
+        android:layout_above="@id/audience_btn"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:background="@drawable/g_white_btn_selector"
+        android:drawableLeft="@drawable/icon_live"
+        android:drawablePadding="-65dp"
+        android:paddingLeft="65dp"
+        android:text="@string/master_client"
+        android:textColor="@color/color_blue_238efa"
+        android:textSize="17dp" />
+
+    <TextView
+        android:id="@+id/tips"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/master_btn"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="30dp"
+        android:text="@string/identity_tips"
+        android:textColor="@color/white"
+        android:textSize="17dp" />
+
+</RelativeLayout>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="50dp"
+    android:visibility="invisible"
+    tools:showIn="@layout/audience_activity">
+
+    <RelativeLayout
+        android:id="@+id/background"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="30dp"
+        android:background="@drawable/gift_background"
+        android:paddingRight="35dp">
+
+        <TextView
+            android:id="@+id/audience_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="30dp"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxEms="6"
+            android:singleLine="true"
+            android:textColor="@color/white"
+            android:textSize="10sp" />
+
+        <TextView
+            android:id="@+id/gift_name_tip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/audience_name"
+            android:layout_marginBottom="4dp"
+            android:layout_marginLeft="30dp"
+            android:layout_marginTop="2dp"
+            android:text="@string/send_gift"
+            android:textColor="@color/white"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/gift_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/audience_name"
+            android:layout_marginBottom="4dp"
+            android:layout_marginTop="2dp"
+            android:layout_toRightOf="@id/gift_name_tip"
+            android:textColor="@color/color_blue_74b9ff"
+            android:textSize="12sp" />
+    </RelativeLayout>
+
+    <com.netease.nim.chatroom.demo.im.ui.widget.CircleImageView
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="10dp"
+        android:background="@drawable/avatar" />
+
+    <ImageView
+        android:id="@+id/gift_image"
+        android:layout_width="50dp"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@id/background"
+        android:layout_marginRight="-10dp" />
+</RelativeLayout>

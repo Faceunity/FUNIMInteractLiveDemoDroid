@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/gift_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:visibility="gone"
+    tools:showIn="@layout/live_player_activity">
+
+    <GridView
+        android:id="@+id/gift_grid_view"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:background="@color/color_black_bf000000"
+        android:listSelector="@drawable/item_border_selected"
+        android:numColumns="4" />
+
+    <TextView
+        android:id="@+id/no_gift_tip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20dp"
+        android:drawablePadding="10dp"
+        android:drawableTop="@drawable/icon_no_gift"
+        android:text="@string/no_gift"
+        android:textColor="@color/white"
+        android:textSize="12sp" />
+</RelativeLayout>

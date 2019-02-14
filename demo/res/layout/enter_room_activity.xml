@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/white"
+    android:orientation="vertical">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        contentInsetLeft="0dp"
+        contentInsetStart="0dp"
+        app:contentInsetStartWithNavigation="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary">
+
+    </android.support.v7.widget.Toolbar>
+
+    <TextView
+        android:id="@+id/room_tip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="15dp"
+        android:text="@string/room_id_tip"
+        android:textColor="@color/color_gray_666666"
+        android:textSize="15sp" />
+
+    <com.netease.nim.chatroom.demo.im.ui.widget.ClearableEditTextWithIcon
+        android:id="@+id/room_id_edit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/nim_blue_edit_text_bg"
+        android:inputType="text"
+        android:padding="5dp"
+        android:paddingLeft="15dp"
+        android:paddingRight="15dp"
+        android:textColor="@color/color_black_333333"
+        android:textColorHint="@color/contact_letter_idx_bg" />
+
+    <Button
+        android:id="@+id/join_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="25dp"
+        android:background="@drawable/nim_blue_btn_selector"
+        android:minHeight="50dp"
+        android:text="@string/join"
+        android:textColor="@color/white"
+        android:textSize="@dimen/text_size_17" />
+</LinearLayout>

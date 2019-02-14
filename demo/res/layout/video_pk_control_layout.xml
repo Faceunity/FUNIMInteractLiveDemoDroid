@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/video_pk_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/color_gray_4D000000"
+    android:orientation="vertical"
+    android:visibility="gone">
+
+    <RelativeLayout
+        android:id="@+id/video_pk_blank_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:visibility="visible"></RelativeLayout>
+
+    <LinearLayout
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:background="@drawable/pk_dialog_bg"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/video_pk_title_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:layout_marginTop="18dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:text="邀请PK"
+                android:textColor="@color/black"
+                android:textSize="20dp" />
+
+        </RelativeLayout>
+
+
+        <LinearLayout
+            android:id="@+id/video_pk_content_invite"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:layout_gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="10dp"
+            android:paddingTop="30dp"
+            android:visibility="visible">
+
+            <EditText
+                android:id="@+id/video_pk_content_invite_account"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_gravity="center_vertical"
+                android:background="@drawable/pk_dialog_edittext_background"
+                android:hint="邀请PK主播ID"
+                android:paddingLeft="6dp"
+                android:textColor="@color/black"
+                android:textSize="15dp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/video_pk_tips_msg"
+            android:layout_width="wrap_content"
+            android:layout_height="120dp"
+            android:layout_gravity="center_horizontal"
+            android:gravity="center"
+            android:padding="10dp"
+            android:text="您当前有PK申请，不能发起邀请"
+            android:textColor="@color/black"
+            android:textSize="15dp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/video_pk_content_waiting"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:gravity="center_vertical"
+            android:orientation="vertical"
+            android:padding="10dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <com.netease.nim.chatroom.demo.im.ui.widget.CircleImageView
+                    android:id="@+id/video_pk_user_header"
+                    android:layout_width="45dp"
+                    android:layout_height="45dp"
+                    android:background="@drawable/avatar" />
+
+                <TextView
+                    android:id="@+id/video_pk_content_waiting_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:textColor="@color/black" />
+            </LinearLayout>
+
+
+            <TextView
+                android:id="@+id/video_pk_content_waiting_tips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginLeft="-10dp"
+                android:layout_marginTop="10dp"
+                android:text="等待对手中....."
+                android:textColor="@color/black" />
+
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/video_pk_tips_btn"
+            android:layout_width="150dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="15dp"
+            android:layout_marginLeft="10dp"
+            android:layout_marginRight="10dp"
+            android:background="@drawable/pk_dialog_cancel_background"
+            android:paddingBottom="8dp"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingTop="8dp"
+            android:text="知道了"
+            android:textSize="17dp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/video_pk_confirm_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/video_pk_button_cancel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginBottom="15dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_weight="1"
+                android:background="@drawable/pk_dialog_cancel_background"
+                android:gravity="center_horizontal"
+                android:paddingBottom="8dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:paddingTop="8dp"
+                android:text="取消"
+                android:textColor="@color/white"
+                android:textSize="17dp" />
+
+
+            <View
+                android:layout_width="0.5dp"
+                android:layout_height="match_parent"
+                android:background="@color/color_white_b3ffffff"></View>
+
+            <TextView
+                android:id="@+id/video_pk_button_confirm"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginBottom="15dp"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:layout_weight="1"
+                android:background="@drawable/pk_dialog_confirm_background"
+                android:gravity="center_horizontal"
+                android:paddingBottom="8dp"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:paddingTop="8dp"
+                android:text="邀请"
+                android:textColor="@color/white"
+                android:textSize="17dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+</LinearLayout>

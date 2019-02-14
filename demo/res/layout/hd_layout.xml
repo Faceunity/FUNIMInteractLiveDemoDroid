@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/hd_mode_layout"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    tools:showIn="@layout/live_player_activity">
+
+    <TextView
+        android:id="@+id/hd_mode_selected"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/ic_mode_normal"
+        android:gravity="center"
+        android:text="高清"
+        android:textColor="@color/color_black_333333" />
+
+    <LinearLayout
+        android:id="@+id/hd_choose_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/ic_mode_choose"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/hd_first_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="高清"
+            android:textColor="@color/black" />
+
+        <TextView
+            android:id="@+id/hd_second_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:gravity="center"
+            android:text="流畅"
+            android:textColor="@color/list_select" />
+    </LinearLayout>
+</RelativeLayout>

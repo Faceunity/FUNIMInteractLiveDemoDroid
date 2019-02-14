@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android"
+    android:oneshot="false">
+    <item
+        android:drawable="@drawable/icon_net_detect_progress"
+        android:duration="150" />
+    <item android:duration="150" >
+        <rotate android:pivotX="50%" android:pivotY="50%"
+                android:fromDegrees="30" android:toDegrees="30">
+            <bitmap android:src="@drawable/icon_net_detect_progress"/>
+        </rotate>
+    </item>
+    <item android:duration="150" >
+        <rotate android:pivotX="50%" android:pivotY="50%"
+                android:fromDegrees="60" android:toDegrees="60">
+            <bitmap android:src="@drawable/icon_net_detect_progress"/>
+        </rotate>
+    </item>
+    <item android:duration="150" >
+        <rotate android:pivotX="50%" android:pivotY="50%"
+                android:fromDegrees="90" android:toDegrees="90">
+            <bitmap android:src="@drawable/icon_net_detect_progress"/>
+        </rotate>
+    </item>
+    <item android:duration="150" >
+        <rotate android:pivotX="50%" android:pivotY="50%"
+                android:fromDegrees="120" android:toDegrees="120">
+            <bitmap android:src="@drawable/icon_net_detect_progress"/>
+        </rotate>
+    </item>
+    <item android:duration="150" >
+        <rotate android:pivotX="50%" android:pivotY="50%"
+                android:fromDegrees="150" android:toDegrees="150">
+            <bitmap android:src="@drawable/icon_net_detect_progress"/>
+        </rotate>
+    </item>
+    <item android:duration="150" >
+        <rotate android:pivotX="50%" android:pivotY="50%"
+                android:fromDegrees="180" android:toDegrees="180">
+            <bitmap android:src="@drawable/icon_net_detect_progress"/>
+        </rotate>
+    </item>
+    <item android:duration="150" >
+        <rotate android:pivotX="50%" android:pivotY="50%"
+                android:fromDegrees="210" android:toDegrees="210">
+            <bitmap android:src="@drawable/icon_net_detect_progress"/>
+        </rotate>
+    </item>
+    <item android:duration="150" >
+        <rotate android:pivotX="50%" android:pivotY="50%"
+                android:fromDegrees="240" android:toDegrees="240">
+            <bitmap android:src="@drawable/icon_net_detect_progress"/>
+        </rotate>
+    </item>
+    <item android:duration="150" >
+        <rotate android:pivotX="50%" android:pivotY="50%"
+                android:fromDegrees="270" android:toDegrees="270">
+            <bitmap android:src="@drawable/icon_net_detect_progress"/>
+        </rotate>
+    </item>
+    <item android:duration="150" >
+        <rotate android:pivotX="50%" android:pivotY="50%"
+                android:fromDegrees="300" android:toDegrees="300">
+            <bitmap android:src="@drawable/icon_net_detect_progress"/>
+        </rotate>
+    </item>
+    <item android:duration="150" >
+        <rotate android:pivotX="50%" android:pivotY="50%"
+                android:fromDegrees="330" android:toDegrees="330">
+            <bitmap android:src="@drawable/icon_net_detect_progress"/>
+        </rotate>
+    </item>
+</animation-list>

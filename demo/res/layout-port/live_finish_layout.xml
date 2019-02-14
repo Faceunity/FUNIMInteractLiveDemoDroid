@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/live_finish_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/color_gray_dfe2e6"
+    android:visibility="gone"
+    tools:showIn="@layout/live_player_activity">
+
+    <ImageView
+        android:id="@+id/finish_head_image"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="145dp"
+        android:background="@drawable/avatar" />
+
+    <TextView
+        android:id="@+id/finish_master_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/finish_head_image"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="7dp"
+        android:text=""
+        android:textColor="@color/color_black_333333"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/finish_master_name"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="27dp"
+        android:text="@string/live_finish"
+        android:textColor="@color/color_black_333333"
+        android:textSize="22sp" />
+
+    <Button
+        android:id="@+id/finish_btn"
+        android:layout_width="215dp"
+        android:layout_height="45dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="120dp"
+        android:background="@drawable/g_white_btn_selector"
+        android:text="@string/return_back"
+        android:textColor="@color/color_blue_238efa" />
+</RelativeLayout>

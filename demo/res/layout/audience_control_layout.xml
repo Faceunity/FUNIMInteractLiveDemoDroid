@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true"
+    android:paddingBottom="10dp"
+    android:paddingTop="10dp"
+    tools:showIn="@layout/audience_activity">
+
+    <TextView
+        android:id="@+id/input_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:background="@drawable/input_icon_selector"
+        android:gravity="center" />
+
+    <ImageButton
+        android:id="@+id/gift_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/input_btn"
+        android:background="@drawable/gift_icon_selector" />
+
+    <TextView
+        android:id="@+id/interaction_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/gift_btn"
+        android:background="@drawable/ic_interaction_normal" />
+
+    <ImageButton
+        android:id="@+id/switch_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/interaction_btn"
+        android:background="@drawable/switch_camera_selector"
+        android:visibility="gone" />
+
+
+    <ImageButton
+        android:id="@+id/share_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/switch_btn"
+        android:background="@drawable/ic_share_selector" />
+
+    <ImageButton
+        android:id="@+id/like_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="15dp"
+        android:background="@drawable/like_icon_selector" />
+</RelativeLayout>

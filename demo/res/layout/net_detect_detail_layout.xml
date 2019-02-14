@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/icon_net_detect_popup_window_bg">
+
+    <TextView
+        android:textSize="15dp"
+        android:layout_marginLeft="12dp"
+        android:layout_marginRight="12dp"
+        android:textColor="@color/color_gray_999999"
+        android:id="@+id/net_detect_state_content_grade_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+    <TextView
+        android:layout_below="@id/net_detect_state_content_grade_tv"
+        android:textSize="13dp"
+        android:layout_margin="12dp"
+        android:lineSpacingMultiplier="1.2"
+        android:textColor="@color/color_gray_999999"
+        android:id="@+id/net_detect_state_content_info_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+    <ImageView
+        android:layout_alignParentRight="true"
+        android:paddingLeft="10dp"
+        android:paddingBottom="10dp"
+        android:id="@+id/net_detect_popup_window_close"
+        android:layout_alignParentTop="true"
+        android:layout_width="wrap_content"
+        android:src="@drawable/icon_net_detect_popup_window_close"
+        android:layout_height="wrap_content" />
+</RelativeLayout>

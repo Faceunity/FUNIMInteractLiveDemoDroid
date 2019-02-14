@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/live_interaction_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:visibility="gone"
+    tools:showIn="@layout/live_player_activity">
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="157dp"
+        android:layout_alignParentBottom="true"
+        android:background="@color/white">
+
+        <TextView
+            android:id="@+id/apply_count_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="10dp"
+            android:text="有2人想要连线"
+            android:textColor="@color/color_black_333333"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <GridView
+            android:id="@+id/apply_grid_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/apply_count_text"
+            android:divider="@color/transparent"
+            android:fadingEdge="none"
+            android:gravity="center"
+            android:listSelector="@drawable/item_border_selected"
+            android:numColumns="4"
+            android:verticalSpacing="4dip"
+            android:scrollbars="none" />
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/no_apply_tip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="45dp"
+        android:drawablePadding="10dp"
+        android:drawableTop="@drawable/icon_no_gift"
+        android:text="@string/no_apply"
+        android:textColor="@color/color_black_333333"
+        android:textSize="15sp" />
+</RelativeLayout>

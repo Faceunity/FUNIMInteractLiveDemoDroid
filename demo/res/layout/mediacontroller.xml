@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="50dip"
+    android:background="@drawable/nemediacontroller_bg"
+    android:orientation="horizontal"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:id="@+id/play_pause_layout"
+        android:layout_width="50dp"
+        android:layout_height="match_parent"
+        android:gravity="center">
+
+        <ImageView
+            android:id="@+id/mediacontroller_play_pause"
+            android:layout_width="20dip"
+            android:layout_height="20dip" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/mediacontroller_time_current"
+        style="@style/MediaController_Text"
+        android:layout_width="60dip"
+        android:layout_height="match_parent"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@+id/play_pause_layout"
+        android:gravity="center"
+        android:textSize="13dp" />
+
+    <TextView
+        android:id="@+id/mediacontroller_time_total"
+        style="@style/MediaController_Text"
+        android:layout_width="60dp"
+        android:layout_height="match_parent"
+        android:layout_centerVertical="true"
+        android:layout_marginRight="30dp"
+        android:layout_toLeftOf="@+id/mute_layout"
+        android:gravity="center"
+        android:textSize="13dp" />
+
+    <LinearLayout
+        android:id="@+id/mute_layout"
+        android:layout_width="50dp"
+        android:layout_height="match_parent"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@+id/snapShot_layout"
+        android:gravity="center">
+
+        <ImageView
+            android:id="@+id/video_player_mute"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/nemediacontroller_mute02" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/snapShot_layout"
+        android:layout_width="50dp"
+        android:layout_height="match_parent"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@+id/scale_layout"
+        android:gravity="center">
+
+        <ImageView
+            android:id="@+id/snapShot"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:focusable="true"
+            android:src="@drawable/nemediacontroller_takesnap" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/scale_layout"
+        android:layout_width="50dp"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:gravity="center">
+
+        <ImageView
+            android:id="@+id/video_player_scale"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:focusable="true"
+            android:src="@drawable/nemediacontroller_scale01" />
+    </LinearLayout>
+</RelativeLayout>

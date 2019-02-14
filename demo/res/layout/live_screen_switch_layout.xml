@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/live_screen_switch_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:visibility="gone"
+    tools:showIn="@layout/live_player_activity">
+
+    <View
+        android:id="@+id/live_screen_switch_cover"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/color_white_00ffffff" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/screen_switch_vertical"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_weight="1"
+            android:background="@color/color_black_cc000000"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingBottom="15dp"
+            android:paddingTop="15dp">
+
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/vertical_icon_selector" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="15dp"
+                android:text="竖屏直播"
+                android:textColor="@drawable/screen_orientation_text_color_selector"
+                android:textSize="15sp"
+                android:visibility="visible" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="@color/color_grey_545454" />
+
+        <LinearLayout
+            android:id="@+id/screen_switch_horizontal"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_weight="1"
+            android:background="@color/color_black_cc000000"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingBottom="15dp"
+            android:paddingTop="15dp">
+
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/horizontal_icon_selector" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="15dp"
+                android:text="横屏直播"
+                android:textColor="@drawable/screen_orientation_text_color_selector"
+                android:textSize="15sp"
+                android:visibility="visible" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+</LinearLayout>

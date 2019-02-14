@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/interaction_group_layout"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_alignParentBottom="true"
+    android:layout_alignParentRight="true"
+    android:layout_marginBottom="40dp"
+    android:layout_marginRight="10dp"
+    android:orientation="vertical">
+
+    <!-- 连麦观众的播放画面 -->
+    <include
+        android:id="@+id/interaction_view_layout_3"
+        layout="@layout/interaction_view_layout" />
+
+
+    <!-- 连麦观众的播放画面 -->
+    <include
+        android:id="@+id/interaction_view_layout_2"
+        layout="@layout/interaction_view_layout" />
+
+    <!-- 连麦观众的播放画面 -->
+    <include
+        android:id="@+id/interaction_view_layout_1"
+        layout="@layout/interaction_view_layout" />
+
+
+
+</LinearLayout>
