@@ -61,9 +61,9 @@ public class InteractionAdapter extends BaseAdapter {
         if (convertView == null) {
             convertView = inflater.inflate(R.layout.interaction_member_item, null);
             viewHolder = new InteractionMemberViewHolder();
-            viewHolder.memberAvatar = (ImageView) convertView.findViewById(R.id.member_avatar);
-            viewHolder.memberName = (TextView) convertView.findViewById(R.id.member_name);
-            viewHolder.memberLinkBtn = (Button) convertView.findViewById(R.id.member_link_btn);
+            viewHolder.memberAvatar = convertView.findViewById(R.id.member_avatar);
+            viewHolder.memberName =  convertView.findViewById(R.id.member_name);
+            viewHolder.memberLinkBtn =  convertView.findViewById(R.id.vedio_link_btn);
             convertView.setTag(viewHolder);
         } else {
             viewHolder = (InteractionMemberViewHolder) convertView.getTag();

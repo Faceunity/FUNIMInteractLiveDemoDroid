@@ -12,10 +12,9 @@
         android:id="@+id/pk_living_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:visibility="gone"
-        >
+        android:visibility="gone">
 
-        <com.netease.nimlib.sdk.avchat.model.AVChatTextureViewRenderer
+        <com.netease.nimlib.sdk.avchat.video.AVChatTextureViewRenderer
             android:id="@+id/pk_video_render"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />

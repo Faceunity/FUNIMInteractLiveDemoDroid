@@ -55,7 +55,6 @@ public class InputActivity extends TActivity {
     // view
     private View rootView;
     private EditText messageEditText; // 输入框
-    private FrameLayout textAudioSwitchLayout; // 语音键盘切换按钮
     private View sendMessageButtonInInputBar; // 发送消息按钮
     private View moreFunctionButtonInInputBar; // 更多布局按钮
     private View emojiButtonInInputBar; // 表情按钮
@@ -68,7 +67,6 @@ public class InputActivity extends TActivity {
     private int screenHeight = 0;
     private int keyboardOldHeight = -1;
     private int keyboardNowHeight = -1;
-    private boolean quit = false;
 
     public static void startActivityForResult(Context context, String text, InputConfig inputConfig, InputActivityProxy proxy) {
         InputActivityProxyManager.getInstance().setProxy(proxy);
@@ -128,7 +126,8 @@ public class InputActivity extends TActivity {
         sendMessageButtonInInputBar = findView(R.id.buttonSendMessage);
 
         // 文本录音按钮切换布局
-        textAudioSwitchLayout = (FrameLayout) rootView.findViewById(R.id.switchLayout);
+        // 语音键盘切换按钮
+        FrameLayout textAudioSwitchLayout = rootView.findViewById(R.id.switchLayout);
         textAudioSwitchLayout.setVisibility(inputConfig.isTextAudioSwitchShow ? View.VISIBLE : View.GONE);
 
         // emoji表情按钮
@@ -153,7 +152,7 @@ public class InputActivity extends TActivity {
             switch (v.getId()) {
                 case R.id.buttonSendMessage:
                     InputActivityProxy proxy = InputActivityProxyManager.getInstance().getProxy();
-                    if(proxy != null) {
+                    if (proxy != null) {
                         proxy.onSendMessage(messageEditText.getText().toString());
                     }
                     messageEditText.setText("");
@@ -256,7 +255,7 @@ public class InputActivity extends TActivity {
      * 收起键盘，返回调用Activity
      */
     private void setActivityResult(final int mode) {
-        quit = true;
+        boolean quit = true;
         // hide keyboard
         hideInputMethod();
 

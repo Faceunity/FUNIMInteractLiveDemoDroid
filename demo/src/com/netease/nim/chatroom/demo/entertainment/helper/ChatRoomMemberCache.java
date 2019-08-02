@@ -147,7 +147,6 @@ public class ChatRoomMemberCache {
     private void saveMember(ChatRoomMember member) {
         if (member != null && !TextUtils.isEmpty(member.getRoomId()) && !TextUtils.isEmpty(member.getAccount())) {
             Map<String, ChatRoomMember> members = cache.get(member.getRoomId());
-
             if (members == null) {
                 members = new HashMap<>();
                 cache.put(member.getRoomId(), members);
@@ -222,7 +221,6 @@ public class ChatRoomMemberCache {
         if (member == null) {
             return;
         }
-
         switch (type) {
             case ChatRoomMemberIn:
                 for (RoomMemberChangedObserver o : roomMemberChangedObservers) {

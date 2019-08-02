@@ -13,14 +13,14 @@ public class GiftCache {
         return InstanceHolder.instance;
     }
 
-    private Map<String, Map<Integer, Integer>> cache = new HashMap<>();
+    private Map<String, HashMap<Integer, Integer>> cache = new HashMap<>();
 
     public void clear() {
         cache.clear();
     }
 
     public void saveGift(String roomId, int type) {
-        Map<Integer, Integer> gifts = cache.get(roomId);
+        HashMap<Integer, Integer> gifts = cache.get(roomId);
         if (gifts == null) {
             gifts = new HashMap<>();
             gifts.put(type, 1);
@@ -33,7 +33,7 @@ public class GiftCache {
         cache.put(roomId, gifts);
     }
 
-    public Map<Integer, Integer> getGift(String roomId) {
+    public HashMap<Integer, Integer> getGift(String roomId) {
         return cache.get(roomId);
     }
 

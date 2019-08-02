@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.netease.nim.chatroom.demo">
 
     <!-- 聊天室权限声明 -->
@@ -16,7 +17,6 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <!-- 多媒体相关 -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.GET_TASKS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -32,8 +32,6 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- 允许程序使用PowerManager WakeLocks以防止处理器休眠或者屏幕锁屏 -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!-- 配置一个程序用于调试 -->
-    <uses-permission android:name="android.permission.SET_DEBUG_APP" />
     <!-- 声明程序使用camera和自动对焦功能 -->
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
@@ -53,7 +51,7 @@
 
         <meta-data
             android:name="com.netease.nim.appKey"
-			android:value="6f49e3f759ccd47810b445444eebc090" />
+            android:value="6f49e3f759ccd47810b445444eebc090" />
 
         <uses-library
             android:name="com.google.android.maps"
@@ -61,7 +59,7 @@
 
         <!-- IM -->
         <activity
-            android:name=".im.activity.WelcomeActivity"
+            android:name=".NeedFaceUnityAcct"
             android:configChanges="keyboardHidden|orientation"
             android:hardwareAccelerated="true"
             android:launchMode="singleTop"
@@ -74,6 +72,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- IM -->
+        <activity
+            android:name=".im.activity.WelcomeActivity"
+            android:configChanges="keyboardHidden|orientation"
+            android:hardwareAccelerated="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:theme="@style/WelcomeEntranceActionBarTheme"
+            android:windowSoftInputMode="adjustPan"></activity>
 
         <activity
             android:name=".im.activity.LoginActivity"
@@ -111,8 +119,8 @@
 
         <activity
             android:name=".entertainment.activity.LiveActivity"
-            android:screenOrientation="portrait"
             android:configChanges="keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar"
             android:windowSoftInputMode="stateHidden|adjustNothing" />
 
@@ -121,7 +129,8 @@
             android:theme="@style/AppTheme.NoActionBar"
             android:windowSoftInputMode="stateHidden|adjustResize" />
 
-        <activity android:name=".entertainment.activity.InputActivity"
+        <activity
+            android:name=".entertainment.activity.InputActivity"
             android:theme="@style/InputActivityTheme"
             android:windowSoftInputMode="stateUnspecified|adjustResize" />
 

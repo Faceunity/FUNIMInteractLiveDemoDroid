@@ -48,14 +48,18 @@ public enum PushMicNotificationType {
      * 拒绝主播PK邀请
      */
     REJECT_INVITATION(11),
+
     /**
      * 无效,对方有可能不是主播或者暂时不能参加PK
      */
     INVALID(12),
+
+
     /**
      * 正在PK中（主播正在PK中，无法接收新的PK请求）
      */
     ININTER_ACTIONS(13),
+
     /**
      * 对方已经退出音视频房间
      */

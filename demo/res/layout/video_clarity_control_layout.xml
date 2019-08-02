@@ -12,7 +12,7 @@
         android:id="@+id/video_clarity_blank_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"></RelativeLayout>
+        android:layout_weight="1"/>
 
     <LinearLayout
 
@@ -46,7 +46,7 @@
             android:id="@+id/video_clarity_divider_view_top"
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
-            android:background="@color/color_white_b3ffffff"></View>
+            android:background="@color/color_white_b3ffffff"/>
 
         <RelativeLayout
             android:id="@+id/video_clarity_hd_rl"
@@ -85,7 +85,7 @@
             android:id="@+id/video_clarity_divider_view_mid"
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
-            android:background="@color/color_white_b3ffffff"></View>
+            android:background="@color/color_white_b3ffffff"/>
 
         <RelativeLayout
             android:id="@+id/video_clarity_sd_rl"
@@ -121,7 +121,7 @@
             android:id="@+id/video_clarity_divider_bottom"
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
-            android:background="@color/color_white_b3ffffff"></View>
+            android:background="@color/color_white_b3ffffff"/>
 
         <TextView
             android:id="@+id/video_clarity_button_cancel"

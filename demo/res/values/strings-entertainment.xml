@@ -26,11 +26,9 @@
     <string name="audio_applying">已申请与主播语音连线</string>
     <string name="cancel_link">取消连线</string>
     <string name="video_loading">正在连接中...</string>
-    <string name="interaction_video_close_title">结束当前\n视频互动？</string>
-    <string name="interaction_audio_close_title">结束当前\n语音互动？</string>
+    <string name="interaction_close_title">结束当前\n直播互动？</string>
     <string name="pk_video_close_title">结束当前\n视频PK？</string>
-    <string name="video_closed">视频连线结束</string>
-    <string name="audio_closed">语音连线结束</string>
+    <string name="link_closed">连线结束</string>
     <string name="interaction">互动</string>
     <string name="beauty_close">美颜已关闭</string>
     <string name="beauty_open">美颜已打开</string>

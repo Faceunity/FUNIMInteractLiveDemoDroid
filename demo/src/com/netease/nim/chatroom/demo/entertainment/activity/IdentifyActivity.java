@@ -40,10 +40,8 @@ import com.netease.nimlib.sdk.auth.AuthServiceObserver;
  */
 public class IdentifyActivity extends TActivity implements View.OnClickListener {
     private final int BASIC_PERMISSION_REQUEST_CODE = 100;
-    public final static int REQ_CODE = 21;
+    public final static int ACTION_REQ_CODE = 21;
     private RelativeLayout identifyActivityRl;
-    private Button masterBtn;
-    private Button audienceBtn;
     private ImageView netDetectStateIv;
     private ImageView netDetectRefreshIv;
     private ProgressBar netDetectLoadingPb;
@@ -57,13 +55,13 @@ public class IdentifyActivity extends TActivity implements View.OnClickListener 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.identify_activity);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(R.string.app_name);
         toolbar.setLogo(R.drawable.actionbar_logo_white);
         setSupportActionBar(toolbar);
 
         findViews();
-        initData();
+        updateNetDetectData();
         registerObservers(true);
         requestBasicPermission(); // 申请APP基本权限
     }
@@ -98,16 +96,12 @@ public class IdentifyActivity extends TActivity implements View.OnClickListener 
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_entertainment, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         switch (item.getItemId()) {
             case R.id.action_logout:
                 LogoutHelper.logout(IdentifyActivity.this, false);
@@ -120,15 +114,15 @@ public class IdentifyActivity extends TActivity implements View.OnClickListener 
     }
 
     private void findViews() {
-        identifyActivityRl = (RelativeLayout) findViewById(R.id.identify_activity_rl);
-        masterBtn = (Button) findViewById(R.id.master_btn);
-        audienceBtn = (Button) findViewById(R.id.audience_btn);
-        netDetectStateIv = (ImageView) findViewById(R.id.net_detect_state_iv);
-        netDetectDetailInfoIv = (ImageView) findViewById(R.id.net_detect_state_content_iv);
-        netDetectStateContentTv = (TextView) findViewById(R.id.net_detect_state_content_tv);
-        netDetectTimeTipsTv = (TextView) findViewById(R.id.net_detect_time_tips_tv);
-        netDetectRefreshIv = (ImageView) findViewById(R.id.net_detect_refresh_iv);
-        netDetectLoadingPb = (ProgressBar) findViewById(R.id.net_detect_loading_pb);
+        identifyActivityRl = findViewById(R.id.identify_activity_rl);
+        Button masterBtn = findViewById(R.id.master_btn);
+        Button audienceBtn = findViewById(R.id.audience_btn);
+        netDetectStateIv = findViewById(R.id.net_detect_state_iv);
+        netDetectDetailInfoIv = findViewById(R.id.net_detect_state_content_iv);
+        netDetectStateContentTv = findViewById(R.id.net_detect_state_content_tv);
+        netDetectTimeTipsTv = findViewById(R.id.net_detect_time_tips_tv);
+        netDetectRefreshIv = findViewById(R.id.net_detect_refresh_iv);
+        netDetectLoadingPb = findViewById(R.id.net_detect_loading_pb);
 
         masterBtn.setOnClickListener(this);
         audienceBtn.setOnClickListener(this);
@@ -136,9 +130,6 @@ public class IdentifyActivity extends TActivity implements View.OnClickListener 
         netDetectStateIv.setOnClickListener(this);
     }
 
-    private void initData() {
-        updateNetDetectData();
-    }
 
     private void updateNetDetectData() {
         if (NetDetectHelpter.getInstance().getNetDetectStatus().intValue() == NetDetectHelpter.STATUS_RUNNING) {
@@ -197,7 +188,9 @@ public class IdentifyActivity extends TActivity implements View.OnClickListener 
     }
 
     private NetStateType calculateGrade() {
-        double netStateIndex = ((double) netDetectResult.getLoss() / 20) * 0.5 + ((double) netDetectResult.getRttAvg() / 1200) * 0.25 + ((double) netDetectResult.getMdev() / 150) * 0.25;
+        double netStateIndex = ((double) netDetectResult.getLoss() / 20) * 0.5 +
+                ((double) netDetectResult.getRttAvg() / 1200) * 0.25 +
+                ((double) netDetectResult.getMdev() / 150) * 0.25;
         if (netStateIndex < 0.2625) {
             return NetStateType.SMOOTH;
         } else if (netStateIndex < 0.55) {
@@ -213,11 +206,10 @@ public class IdentifyActivity extends TActivity implements View.OnClickListener 
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.master_btn:
-//                UserPreferences.setTeacherIdentify(true);
-                startActivityForResult(new Intent(IdentifyActivity.this, LiveModeChooseActivity.class), REQ_CODE);
+                startActivityForResult(new Intent(IdentifyActivity.this, LiveModeChooseActivity.class), ACTION_REQ_CODE);
                 break;
             case R.id.audience_btn:
-                startActivityForResult(new Intent(IdentifyActivity.this, EnterRoomActivity.class), REQ_CODE);
+                startActivityForResult(new Intent(IdentifyActivity.this, EnterRoomActivity.class), ACTION_REQ_CODE);
                 break;
             case R.id.net_detect_state_content_iv:
                 showNetDetectDetailInfo();
@@ -233,9 +225,9 @@ public class IdentifyActivity extends TActivity implements View.OnClickListener 
 
     private void showNetDetectDetailInfo() {
         RelativeLayout netDetectDetailLayout = (RelativeLayout) LayoutInflater.from(this).inflate(R.layout.net_detect_detail_layout, null);
-        TextView netDetectGradeTv = (TextView) netDetectDetailLayout.findViewById(R.id.net_detect_state_content_grade_tv);
-        TextView netDetectInfoTv = (TextView) netDetectDetailLayout.findViewById(R.id.net_detect_state_content_info_tv);
-        ImageView netDetectPopupWindowClose = (ImageView) netDetectDetailLayout.findViewById(R.id.net_detect_popup_window_close);
+        TextView netDetectGradeTv = netDetectDetailLayout.findViewById(R.id.net_detect_state_content_grade_tv);
+        TextView netDetectInfoTv = netDetectDetailLayout.findViewById(R.id.net_detect_state_content_info_tv);
+        ImageView netDetectPopupWindowClose = netDetectDetailLayout.findViewById(R.id.net_detect_popup_window_close);
         switch (netGrade) {
             case SMOOTH:
                 netDetectGradeTv.setText("音视频均流畅");
@@ -263,9 +255,7 @@ public class IdentifyActivity extends TActivity implements View.OnClickListener 
         netDetectPopupWindowClose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (popupWindow != null) {
-                    popupWindow.dismiss();
-                }
+                popupWindow.dismiss();
             }
         });
         popupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -290,18 +280,16 @@ public class IdentifyActivity extends TActivity implements View.OnClickListener 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode != Activity.RESULT_OK) {
+        if (resultCode != Activity.RESULT_OK || requestCode != ACTION_REQ_CODE) {
             return;
         }
-        if (requestCode == REQ_CODE) {
-            if (NetDetectHelpter.getInstance().getNetDetectStatus().intValue() == NetDetectHelpter.STATUS_COMPLETE) {
-                netDetectTimeTipsTv.setVisibility(View.VISIBLE);
-                long time = (System.currentTimeMillis() - NetDetectHelpter.getInstance().getTimeStamp()) / 60000;
-                if (time < 2) {
-                    netDetectTimeTipsTv.setText("1分钟前检测");
-                } else {
-                    netDetectTimeTipsTv.setText(time + "分钟前检测");
-                }
+        if (NetDetectHelpter.getInstance().getNetDetectStatus().intValue() == NetDetectHelpter.STATUS_COMPLETE) {
+            netDetectTimeTipsTv.setVisibility(View.VISIBLE);
+            long time = (System.currentTimeMillis() - NetDetectHelpter.getInstance().getTimeStamp()) / 60000;
+            if (time < 2) {
+                netDetectTimeTipsTv.setText("1分钟前检测");
+            } else {
+                netDetectTimeTipsTv.setText(time + "分钟前检测");
             }
         }
     }

@@ -21,7 +21,7 @@ public abstract class TActivity extends AppCompatActivity {
 
     private boolean destroyed = false;
 
-    private static Handler handler;
+    private Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +33,6 @@ public abstract class TActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         LogUtil.ui("activity: " + getClass().getSimpleName() + " onDestroy()");
         destroyed = true;
     }
@@ -47,21 +46,25 @@ public abstract class TActivity extends AppCompatActivity {
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        LogUtil.ui("activity: " + getClass().getSimpleName() + " onConfigurationChanged()->"+(newConfig.orientation == Configuration.ORIENTATION_PORTRAIT?"PORTRAIT":"LANDSCAPE"));
+        LogUtil.ui("activity: " + getClass().getSimpleName() + " onConfigurationChanged()->" + (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT ? "PORTRAIT" : "LANDSCAPE"));
     }
 
     protected void showKeyboard(boolean isShow) {
-        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
 
+        InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+
+        if (inputMethodManager == null) {
+            return;
+        }
         if (isShow) {
             if (getCurrentFocus() == null) {
-                imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+                inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
             } else {
-                imm.showSoftInput(getCurrentFocus(), 0);
+                inputMethodManager.showSoftInput(getCurrentFocus(), 0);
             }
         } else {
             if (getCurrentFocus() != null) {
-                imm.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+                inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
             }
 
         }
@@ -106,21 +109,9 @@ public abstract class TActivity extends AppCompatActivity {
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     private void invokeFragmentManagerNoteStateNotSaved() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-            ReflectionUtil.invokeMethod(getFragmentManager(), "noteStateNotSaved", null);
-        }
+        ReflectionUtil.invokeMethod(getSupportFragmentManager(), "noteStateNotSaved", null);
     }
 
-    protected void switchFragmentContent(TFragment fragment) {
-        FragmentManager fm = getSupportFragmentManager();
-        FragmentTransaction transaction = fm.beginTransaction();
-        transaction.replace(fragment.getContainerId(), fragment);
-        try {
-            transaction.commitAllowingStateLoss();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     protected final Handler getHandler() {
         if (handler == null) {

@@ -30,7 +30,7 @@
         android:layout_height="match_parent"
         android:visibility="gone">
 
-        <com.netease.nimlib.sdk.avchat.model.AVChatTextureViewRenderer
+        <com.netease.nimlib.sdk.avchat.video.AVChatTextureViewRenderer
             android:id="@+id/bypass_video_render"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
@@ -98,6 +98,15 @@
             android:background="@drawable/icon_close_selector" />
     </RelativeLayout>
 
+    <TextView
+        android:id="@+id/audience_volume"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="2dp"
+        android:text="音量：0"
+        android:textColor="@color/white"
+        android:textSize="8sp" />
+
     <!-- 结束确认画面 -->
     <LinearLayout
         android:id="@+id/interaction_close_confirm_layout"
@@ -108,13 +117,13 @@
         android:visibility="gone">
 
         <TextView
+            android:id="@+id/interaction_close_confirm_tips_tv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/interaction_close_confirm_tips_tv"
             android:gravity="center"
-            android:paddingBottom="20dp"
             android:paddingTop="20dp"
-            android:text="@string/interaction_video_close_title"
+            android:paddingBottom="20dp"
+            android:text="@string/interaction_close_title"
             android:textColor="@color/color_black_333333"
             android:textSize="12sp" />
 

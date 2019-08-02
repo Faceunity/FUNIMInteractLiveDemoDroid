@@ -26,7 +26,7 @@
             android:textSize="17sp" />
 
         <Button
-            android:id="@+id/member_link_btn"
+            android:id="@+id/vedio_link_btn"
             android:layout_width="190dp"
             android:layout_height="40dp"
             android:layout_below="@id/interaction_tip"
@@ -39,7 +39,7 @@
             android:id="@+id/audio_link_btn"
             android:layout_width="190dp"
             android:layout_height="40dp"
-            android:layout_below="@id/member_link_btn"
+            android:layout_below="@id/vedio_link_btn"
             android:background="@drawable/nim_blue_btn"
             android:layout_centerHorizontal="true"
             android:layout_marginTop="10dp"

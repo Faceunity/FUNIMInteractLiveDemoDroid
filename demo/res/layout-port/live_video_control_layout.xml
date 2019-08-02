@@ -77,9 +77,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
-            android:background="@drawable/ic_beauty_open_selector"
             android:gravity="center"
-            android:visibility="gone" />
+            android:background="@drawable/ic_beauty_open_selector" />
 
         <ImageButton
             android:id="@+id/enlarge_btn"
@@ -120,6 +119,7 @@
             android:layout_marginLeft="10dp"
             android:layout_toRightOf="@id/flash_btn"
             android:background="@drawable/ic_mirror_close_selector" />
+
 
 
     </LinearLayout>

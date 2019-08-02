@@ -4,10 +4,11 @@ import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.RelativeLayout;
+
 import com.netease.nim.chatroom.demo.R;
 import com.netease.nim.chatroom.demo.base.ui.TActivity;
 
-import butterknife.Bind;
+import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
@@ -17,9 +18,11 @@ import butterknife.OnClick;
 public class LiveModeChooseActivity extends TActivity {
 
     private static final String TAG = LiveModeChooseActivity.class.getSimpleName();
-    @Bind(R.id.video_live_layout)
+
+    @BindView(R.id.video_live_layout)
     RelativeLayout videoLiveLayout;
-    @Bind(R.id.audio_live_layout)
+
+    @BindView(R.id.audio_live_layout)
     RelativeLayout audioLiveLayout;
 
     @Override
@@ -27,7 +30,7 @@ public class LiveModeChooseActivity extends TActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.live_mode_choose_activity);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(R.string.app_name);
         toolbar.setLogo(R.drawable.actionbar_logo_white);
         setSupportActionBar(toolbar);
@@ -48,16 +51,13 @@ public class LiveModeChooseActivity extends TActivity {
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.video_live_layout:
-                LiveActivity.start(LiveModeChooseActivity.this,true, true);
+                LiveActivity.start(LiveModeChooseActivity.this, true, true);
                 break;
             case R.id.audio_live_layout:
-                LiveActivity.start(LiveModeChooseActivity.this,false, true);
+                LiveActivity.start(LiveModeChooseActivity.this, false, true);
                 break;
         }
     }
-
-
-
 
 
     @Override

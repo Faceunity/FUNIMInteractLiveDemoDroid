@@ -1,14 +1,14 @@
 apply plugin: 'com.android.library'
-apply plugin: 'org.greenrobot.greendao'
 
 android {
-    compileSdkVersion 27
+    compileSdkVersion 28
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
-        minSdkVersion 18
-        targetSdkVersion 27
-        versionCode 59
-        versionName "5.9.0"
+        minSdkVersion 15
+        targetSdkVersion 28
+        versionCode 1
+        versionName "6.0.0_dev_tf_phy-3938b3e9-16d49df-47a70ba"
     }
 
     buildTypes {
@@ -18,16 +18,15 @@ android {
         }
     }
 
-    greendao {
-        schemaVersion 1 //数据库版本号
-        daoPackage 'com.faceunity.greendao' //设置DaoMaster、DaoSession、Dao包名
-        targetGenDir 'src/main/java' //设置DaoMaster、DaoSession、Dao目录
+    sourceSets {
+        main.assets.srcDirs += ['src/main/assets', 'src/main/effects/bundle']
+        main.res.srcDirs += ['src/mian/res', 'src/main/effects/res', 'src/main/filters/res']
     }
-
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    api 'com.android.support:appcompat-v7:27.1.1'
-    api 'org.greenrobot:greendao:3.2.2'
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'com.android.support:recyclerview-v7:28.0.0'
+    implementation 'de.hdodenhof:circleimageview:3.0.0'
 }

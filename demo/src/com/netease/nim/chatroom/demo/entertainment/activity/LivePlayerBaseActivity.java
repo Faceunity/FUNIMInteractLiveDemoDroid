@@ -58,9 +58,8 @@ import com.netease.nimlib.sdk.RequestCallback;
 import com.netease.nimlib.sdk.ResponseCode;
 import com.netease.nimlib.sdk.StatusCode;
 import com.netease.nimlib.sdk.auth.AuthServiceObserver;
-import com.netease.nimlib.sdk.avchat.AVChatStateObserver;
-import com.netease.nimlib.sdk.avchat.constant.AVChatType;
-import com.netease.nimlib.sdk.avchat.model.AVChatTextureViewRenderer;
+
+import com.netease.nimlib.sdk.avchat.video.AVChatTextureViewRenderer;
 import com.netease.nimlib.sdk.chatroom.ChatRoomService;
 import com.netease.nimlib.sdk.chatroom.ChatRoomServiceObserver;
 import com.netease.nimlib.sdk.chatroom.model.ChatRoomInfo;
@@ -88,9 +87,8 @@ import java.util.TimerTask;
  * 直播端和观众端的基类
  * Created by hzxuwen on 2016/4/5.
  */
-public abstract class LivePlayerBaseActivity extends TActivity implements ModuleProxy, AVChatStateObserver {
+public abstract class LivePlayerBaseActivity extends TActivity implements ModuleProxy {
     private static final String TAG = LivePlayerBaseActivity.class.getSimpleName();
-
 
     class InteractionView {
         RelativeLayout rootViewLayout; // 连麦画面布局
@@ -104,16 +102,17 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
         TextView connectionCloseConfirmTipsTv;
         TextView connectionCloseConfirm; // 连麦关闭确认
         TextView connectionCloseCancel; // 连麦关闭取消
+        TextView audienceVolume;//观众音量
         TextView livingBg; // 防止用户关闭权限，没有图像时显示
         AVChatTextureViewRenderer bypassVideoRender; // 旁路直播画面
         TextView onMicNameText; // 连麦的观众姓名
         String account;
+        String meetingUid;//avchat对应Id
     }
 
     protected final int LIVE_PERMISSION_REQUEST_CODE = 100;
-    protected final static String EXTRA_MEETING_NAME = "EXTRA_MEETING_NAME";
+    protected final int UPDATE_VOLUME_INTERVAL = 500;
     protected final static String EXTRA_ROOM_ID = "ROOM_ID";
-    protected final static String EXTRA_URL = "EXTRA_URL";
     protected final static String EXTRA_MODE = "EXTRA_MODE";
     protected final static String EXTRA_CREATOR = "EXTRA_CREATOR";
     private final static int FETCH_ONLINE_PEOPLE_COUNTS_DELTA = 10 * 1000;
@@ -127,6 +126,7 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
     protected String pullUrl; // 拉流地址
     protected String masterNick; // 主播昵称
     protected String meetingName; // 音视频会议房间名称
+    protected String meetingUid; // 主播音视频Uid
     protected boolean isCreator; // 是否是主播
     protected int screenOrientation; //屏幕方向
 
@@ -138,11 +138,9 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
     // view
     protected ViewGroup rootView;
     protected TextView masterNameText;
-    private TextView inputBtn; //文字模式按钮
+    protected TextView masterVolume;
     private TextView onlineCountText; // 在线人数view
     protected GridView giftView; // 礼物列表
-    private RelativeLayout giftAnimationViewDown; // 礼物动画布局1
-    private RelativeLayout giftAnimationViewUp; // 礼物动画布局2
     protected PeriscopeLayout periscopeLayout; // 点赞爱心布局
     protected ImageButton giftBtn; // 礼物按钮
     protected ViewGroup giftLayout; // 礼物布局
@@ -157,28 +155,18 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
     protected int maxInteractionMembers = 3; //最多同时三人连麦
     protected InteractionView[] interactionGroupView = new InteractionView[maxInteractionMembers];
 
-    private ViewGroup interaction_group_layout;
-
-    private ImageButton shareBtn; // 分享按钮
-
-
-
     // data
     protected GiftAdapter adapter;
     protected GiftAnimation giftAnimation; // 礼物动画
     private AbortableFuture<EnterChatRoomResultData> enterRequest;
 
-    // calculate keyboard height to listen keyboard collapse event
-    private int screenHeight = 0;
-    private int keyboardOldHeight = -1;
-    private int keyboardNowHeight = -1;
 
     // state
-    protected boolean isOnMic = false; // 是否连上麦
-    protected boolean isMeOnMic = false; // 是否我自己连上麦
     protected LiveType liveType; // 直播类型
-    protected int style; // 语音/视频连麦类型
     protected boolean isDestroyed = false;
+
+    private long updateVolumeTime = 0;
+
 
     protected abstract int getActivityLayout(); // activity布局文件
 
@@ -190,11 +178,8 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(getActivityLayout());
-
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);   //应用运行时，保持屏幕高亮，不锁屏
-
         parseIntent();
-
         // 注册监听
         registerObservers(true);
 
@@ -241,9 +226,6 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
         findViews();
     }
 
-    /***********************
-     * 录音摄像头权限申请
-     *******************************/
 
     // 权限控制
     protected static final String[] LIVE_PERMISSIONS = new String[]{
@@ -260,15 +242,12 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
                 .request();
     }
 
-    /***************************
-     * 监听
-     ****************************/
 
     private void registerObservers(boolean register) {
         NIMClient.getService(ChatRoomServiceObserver.class).observeReceiveMessage(incomingChatRoomMsg, register);
         NIMClient.getService(ChatRoomServiceObserver.class).observeOnlineStatus(onlineStatus, register);
         NIMClient.getService(ChatRoomServiceObserver.class).observeKickOutEvent(kickOutObserver, register);
-        NIMClient.getService(MsgServiceObserve.class).observeCustomNotification(customNotification, register);
+        NIMClient.getService(MsgServiceObserve.class).observeCustomNotification(customNotificationObserver, register);
         NIMClient.getService(AuthServiceObserver.class).observeOnlineStatus(userStatusObserver, register);
     }
 
@@ -278,17 +257,16 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
             if (messages == null || messages.isEmpty()) {
                 return;
             }
-
             for (ChatRoomMessage message : messages) {
-                if (message != null && message.getAttachment() instanceof GiftAttachment) {
+                if (message.getAttachment() instanceof GiftAttachment) {
                     // 收到礼物消息
                     GiftType type = ((GiftAttachment) message.getAttachment()).getGiftType();
                     updateGiftList(type);
                     giftAnimation.showGiftAnimation(message);
-                } else if (message != null && message.getAttachment() instanceof LikeAttachment) {
+                } else if (message.getAttachment() instanceof LikeAttachment) {
                     // 收到点赞爱心
                     periscopeLayout.addHeart();
-                } else if (message != null && message.getAttachment() instanceof ChatRoomNotificationAttachment) {
+                } else if (message.getAttachment() instanceof ChatRoomNotificationAttachment) {
                     // 通知类消息
                     ChatRoomNotificationAttachment attachment = (ChatRoomNotificationAttachment) message.getAttachment();
                     if (attachment.getType() == NotificationType.ChatRoomMemberIn) {
@@ -296,15 +274,15 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
                     } else if (attachment.getType() == NotificationType.ChatRoomInfoUpdated) {
                         onReceiveChatRoomInfoUpdate(attachment.getExtension());
                     }
-                } else if (message != null && message.getAttachment() instanceof ConnectedAttachment) {
+                } else if (message.getAttachment() instanceof ConnectedAttachment) {
                     // 观众收到旁路直播连接消息
-                    onMicConnectedMsg(message);
-                } else if (message != null && message.getAttachment() instanceof DisconnectAttachment) {
+                    onMicLinkedMsg(message);
+                } else if (message.getAttachment() instanceof DisconnectAttachment) {
                     // 观众收到旁路直播断开消息
                     DisconnectAttachment attachment = (DisconnectAttachment) message.getAttachment();
                     int index = getInteractionViewIndexByAccount(attachment.getAccount());
                     if (!TextUtils.isEmpty(attachment.getAccount()) && attachment.getAccount().equals(roomInfo.getCreator())) {
-                        if(index != -1){
+                        if (index != -1) {
                             resetConnectionView(index);
                         }
                     } else {
@@ -317,13 +295,12 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
         }
     };
 
-    Observer<CustomNotification> customNotification = new Observer<CustomNotification>() {
+    Observer<CustomNotification> customNotificationObserver = new Observer<CustomNotification>() {
         @Override
         public void onEvent(CustomNotification customNotification) {
             if (customNotification == null) {
                 return;
             }
-
             String content = customNotification.getContent();
             try {
                 JSONObject json = JSON.parseObject(content);
@@ -335,19 +312,19 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
                 LogUtil.i(TAG, "receive command type:" + id);
                 if (id == PushMicNotificationType.JOIN_QUEUE.getValue()) {
                     // 加入连麦队列
-                    joinQueue(customNotification, json);
+                    audienceApplyJoinQueue(customNotification, json);
                 } else if (id == PushMicNotificationType.EXIT_QUEUE.getValue()) {
                     // 退出连麦队列
-                    exitQueue(customNotification);
+                    audienceExitQueue(customNotification);
                 } else if (id == PushMicNotificationType.CONNECTING_MIC.getValue()) {
                     // 主播选中某人连麦
-                    onMicLinking(json);
+                    onAgreeLinkedByMaster(json);
                 } else if (id == PushMicNotificationType.DISCONNECT_MIC.getValue()) {
                     // 被主播断开连麦
-                    onMicCanceling();
+                    onMicDisconnectByMaster();
                 } else if (id == PushMicNotificationType.REJECT_CONNECTING.getValue()) {
                     // 观众由于重新进入了房间而拒绝连麦
-                    rejectConnecting(customNotification.getFromAccount());
+                    rejectLinkByAudience(customNotification.getFromAccount());
                 }
 
             } catch (Exception e) {
@@ -368,7 +345,6 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
                 DialogMaker.updateLoadingMessage("登录中...");
             } else if (chatRoomStatusChangeData.status == StatusCode.LOGINED) {
                 onOnlineStatusChanged(true);
-            } else if (chatRoomStatusChangeData.status.wontAutoLogin()) {
             } else if (chatRoomStatusChangeData.status == StatusCode.NET_BROKEN) {
                 onOnlineStatusChanged(false);
                 Toast.makeText(LivePlayerBaseActivity.this, R.string.net_broken, Toast.LENGTH_SHORT).show();
@@ -377,11 +353,9 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
         }
     };
 
-    /**
-     * 用户状态变化
-     */
-    Observer<StatusCode> userStatusObserver = new Observer<StatusCode>() {
 
+    // 用户状态变化
+    Observer<StatusCode> userStatusObserver = new Observer<StatusCode>() {
         @Override
         public void onEvent(StatusCode code) {
             LogUtil.i(TAG, "Chat Room user Status:" + StatusCode.typeOfValue(code.getValue()).name());
@@ -403,10 +377,7 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
     };
 
 
-    /**************************
-     * 断网重连
-     ****************************/
-
+    // 断网重连
     protected void onOnlineStatusChanged(boolean isOnline) {
         if (isOnline) {
             onConnected();
@@ -419,29 +390,27 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
 
     protected abstract void onDisconnected(); // 网络断开
 
-    /****************************
-     * 布局初始化
-     **************************/
 
     protected void findViews() {
-
         roomName = findView(R.id.room_name);
         masterNameText = findView(R.id.master_name);
         onlineCountText = findView(R.id.online_count_text);
         roomOwnerLayout = findView(R.id.room_owner_layout);
         roomNameLayout = findView(R.id.room_name_layout);
+        masterVolume = findView(R.id.master_volume);
 
         //控制布局
         findControlViews();
 
         interactionBtn = findView(R.id.interaction_btn);
         giftBtn = findView(R.id.gift_btn);
-        shareBtn = findView(R.id.share_btn);
+        // 分享按钮
+        ImageButton shareBtn = findView(R.id.share_btn);
         shareBtn.setOnClickListener(baseClickListener);
         // 礼物列表
         findGiftLayout();
         // 点赞的爱心布局
-        periscopeLayout = (PeriscopeLayout) findViewById(R.id.periscope);
+        periscopeLayout = findViewById(R.id.periscope);
 
         // 互动连麦布局
         findInteractionViews();
@@ -473,7 +442,8 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
         }
         messageEditText = findView(R.id.editTextMessage);
 
-        inputBtn = findView(R.id.input_btn);
+        //文字模式按钮
+        TextView inputBtn = findView(R.id.input_btn);
         inputBtn.setOnClickListener(baseClickListener);
         inputPanel.hideInputPanel();
         inputPanel.collapse(true);
@@ -484,8 +454,10 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
         giftLayout = findView(R.id.gift_layout);
         giftView = findView(R.id.gift_grid_view);
 
-        giftAnimationViewDown = findView(R.id.gift_animation_view);
-        giftAnimationViewUp = findView(R.id.gift_animation_view_up);
+        // 礼物动画布局1
+        RelativeLayout giftAnimationViewDown = findView(R.id.gift_animation_view);
+        // 礼物动画布局2
+        RelativeLayout giftAnimationViewUp = findView(R.id.gift_animation_view_up);
 
         giftAnimation = new GiftAnimation(giftAnimationViewDown, giftAnimationViewUp);
     }
@@ -497,16 +469,17 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
 
     // 互动连麦布局
     private void findInteractionViews() {
+
         audioModeBgLayout = findView(R.id.audio_mode_background);
         videoModeBgLayout = findView(R.id.video_layout);
-        interaction_group_layout = findView(R.id.interaction_group_layout);
+        ViewGroup interaction_group_layout = findView(R.id.interaction_group_layout);
 
         ViewGroup micNameLayout = findView(R.id.on_mic_name_layout);
-        for(int i = 0; i< interactionGroupView.length; i++){
+        for (int i = 0; i < interactionGroupView.length; i++) {
             final InteractionView interactionView = new InteractionView();
             int rootResTd = 0;
             int micNameId = 0;
-            switch (i){
+            switch (i) {
                 case 0:
                     rootResTd = R.id.interaction_view_layout_1;
                     micNameId = R.id.on_mic_name_1;
@@ -522,31 +495,27 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
                 default:
                     break;
             }
-            interactionView.rootViewLayout = findViewById(interaction_group_layout,rootResTd);
-            interactionView.bypassVideoRender = findViewById(interactionView.rootViewLayout,R.id.bypass_video_render);
-            interactionView.loadingNameText = findViewById(interactionView.rootViewLayout,R.id.loading_name);
-            interactionView.onMicNameText = findViewById(micNameLayout,micNameId);
-            interactionView.audienceLoadingLayout = findViewById(interactionView.rootViewLayout,R.id.audience_loading_layout);
-            interactionView.audienceLivingLayout = findViewById(interactionView.rootViewLayout,R.id.audience_living_layout);
-            interactionView.livingBg = findViewById(interactionView.rootViewLayout,R.id.no_video_bg);
-
-            interactionView.connectionViewCloseBtn = findViewById(interactionView.rootViewLayout,R.id.interaction_close_btn);
-            interactionView.connectionCloseConfirmLayout = findViewById(interactionView.rootViewLayout,R.id.interaction_close_confirm_layout);
-            interactionView.connectionCloseConfirmTipsTv = findViewById(interactionView.rootViewLayout,R.id.interaction_close_confirm_tips_tv);
-            interactionView.connectionCloseConfirm = findViewById(interactionView.rootViewLayout,R.id.close_confirm);
-            interactionView.connectionCloseCancel = findViewById(interactionView.rootViewLayout,R.id.close_cancel);
-            interactionView.loadingClosingText = findViewById(interactionView.rootViewLayout,R.id.loading_closing_text);
-            interactionView.audioModeBypassLayout = findViewById(interactionView.rootViewLayout,R.id.audio_mode_audience_layout);
+            interactionView.rootViewLayout = findViewById(interaction_group_layout, rootResTd);
+            interactionView.bypassVideoRender = findViewById(interactionView.rootViewLayout, R.id.bypass_video_render);
+            interactionView.loadingNameText = findViewById(interactionView.rootViewLayout, R.id.loading_name);
+            interactionView.onMicNameText = findViewById(micNameLayout, micNameId);
+            interactionView.audienceLoadingLayout = findViewById(interactionView.rootViewLayout, R.id.audience_loading_layout);
+            interactionView.audienceLivingLayout = findViewById(interactionView.rootViewLayout, R.id.audience_living_layout);
+            interactionView.livingBg = findViewById(interactionView.rootViewLayout, R.id.no_video_bg);
+            interactionView.connectionViewCloseBtn = findViewById(interactionView.rootViewLayout, R.id.interaction_close_btn);
+            interactionView.audienceVolume = findViewById(interactionView.rootViewLayout, R.id.audience_volume);
+            interactionView.connectionCloseConfirmLayout = findViewById(interactionView.rootViewLayout, R.id.interaction_close_confirm_layout);
+            interactionView.connectionCloseConfirmTipsTv = findViewById(interactionView.rootViewLayout, R.id.interaction_close_confirm_tips_tv);
+            interactionView.connectionCloseConfirm = findViewById(interactionView.rootViewLayout, R.id.close_confirm);
+            interactionView.connectionCloseCancel = findViewById(interactionView.rootViewLayout, R.id.close_cancel);
+            interactionView.loadingClosingText = findViewById(interactionView.rootViewLayout, R.id.loading_closing_text);
+            interactionView.audioModeBypassLayout = findViewById(interactionView.rootViewLayout, R.id.audio_mode_audience_layout);
             interactionView.connectionViewCloseBtn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     interactionView.connectionViewCloseBtn.setVisibility(View.GONE);
                     interactionView.connectionCloseConfirmLayout.setVisibility(View.VISIBLE);
-                    if (style == AVChatType.AUDIO.getValue()) {
-                        interactionView.connectionCloseConfirmTipsTv.setText(R.string.interaction_audio_close_title);
-                    } else {
-                        interactionView.connectionCloseConfirmTipsTv.setText(R.string.interaction_video_close_title);
-                    }
+                    interactionView.connectionCloseConfirmTipsTv.setText(R.string.interaction_close_title);
                 }
             });
             final int index = i;
@@ -584,14 +553,9 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
     }
 
 
-
-    /****************************
-     * 进入聊天室
-     ***********************/
-
     // 进入聊天室
     public void enterRoom() {
-        if(isDestroyed) {
+        if (isDestroyed) {
             return;
         }
         DialogMaker.showProgressDialog(this, null, "", true, new DialogInterface.OnCancelListener() {
@@ -599,19 +563,28 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
             public void onCancel(DialogInterface dialog) {
                 if (enterRequest != null) {
                     enterRequest.abort();
-                    onLoginDone();
+                    onEnterRoomDone();
                     finish();
                 }
             }
         }).setCanceledOnTouchOutside(false);
+
         EnterChatRoomData data = new EnterChatRoomData(roomId);
         setEnterRoomExtension(data);
         enterRequest = NIMClient.getService(ChatRoomService.class).enterChatRoom(data);
         enterRequest.setCallback(new RequestCallback<EnterChatRoomResultData>() {
             @Override
             public void onSuccess(EnterChatRoomResultData result) {
-                onLoginDone();
+                if (isDestroyed) {
+                    return;
+                }
                 roomInfo = result.getRoomInfo();
+                if (roomInfo == null) {
+                    Toast.makeText(LivePlayerBaseActivity.this, "获取聊天室信息异常", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+
+                onEnterRoomDone();
                 ChatRoomMember member = result.getMember();
                 member.setRoomId(roomInfo.getRoomId());
                 ChatRoomMemberCache.getInstance().saveMyMember(member);
@@ -624,7 +597,7 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
 
             @Override
             public void onFailed(int code) {
-                onLoginDone();
+                onEnterRoomDone();
                 if (code == ResponseCode.RES_CHATROOM_BLACKLIST) {
                     Toast.makeText(LivePlayerBaseActivity.this, "你已被拉入黑名单，不能再进入", Toast.LENGTH_SHORT).show();
                 } else {
@@ -637,7 +610,7 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
 
             @Override
             public void onException(Throwable exception) {
-                onLoginDone();
+                onEnterRoomDone();
                 Toast.makeText(LivePlayerBaseActivity.this, "enter chat room exception, e=" + exception.getMessage(), Toast.LENGTH_SHORT).show();
                 if (isCreator) {
                     finish();
@@ -653,32 +626,39 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
 
     // 获取当前直播的模式
     private void getLiveMode(Map<String, Object> ext) {
-        if (ext != null) {
-            if (ext.containsKey(PushLinkConstant.type)) {
-                int type = (int) ext.get(PushLinkConstant.type);
-                liveType = LiveType.typeOfValue(type);
-            }
+        if (ext == null) {
+            return;
+        }
+        if (ext.containsKey(PushLinkConstant.type)) {
+            int type = (int) ext.get(PushLinkConstant.type);
+            liveType = LiveType.typeOfValue(type);
+        }
 
-            if (ext.containsKey(PushLinkConstant.meetingName)) {
-                meetingName = (String) ext.get(PushLinkConstant.meetingName);
-            }
+        if (ext.containsKey(PushLinkConstant.meetingName)) {
+            meetingName = (String) ext.get(PushLinkConstant.meetingName);
+        }
 
-            if(ext.containsKey(PushLinkConstant.orientation)) {
-                screenOrientation = (int) ext.get(PushLinkConstant.orientation);
-                if((getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT
-                        ? 1 : 2 ) != screenOrientation) {
-                    setRequestedOrientation(screenOrientation == 1? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT:ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-                }
+        if (ext.containsKey(PushLinkConstant.meetingUid)) {
+            meetingUid = String.valueOf(ext.get(PushLinkConstant.meetingUid));
+        }
+
+
+        if (ext.containsKey(PushLinkConstant.orientation)) {
+            screenOrientation = (int) ext.get(PushLinkConstant.orientation);
+            if ((getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT ? 1 : 2) != screenOrientation) {
+                setRequestedOrientation(screenOrientation == 1 ? ActivityInfo.SCREEN_ORIENTATION_PORTRAIT : ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             }
         }
+
+
     }
 
     // 观众解析房间信息。
-    protected void parseRoomPkInfo(Map<String, Object> extension)  {
+    protected void parseRoomPkInfo(Map<String, Object> extension) {
 
     }
 
-    private void onLoginDone() {
+    protected void onEnterRoomDone() {
         enterRequest = null;
         DialogMaker.dismissProgressDialog();
     }
@@ -734,10 +714,6 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
         }, FETCH_ONLINE_PEOPLE_COUNTS_DELTA, FETCH_ONLINE_PEOPLE_COUNTS_DELTA);
     }
 
-    /*******************
-     * 离开聊天室
-     ***********************/
-
     private void clearChatRoom() {
         ChatRoomMemberCache.getInstance().clearRoomCache(roomId);
         getHandler().postDelayed(new Runnable() {
@@ -752,10 +728,6 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
     protected void onReceiveChatRoomInfoUpdate(Map<String, Object> extension) {
 
     }
-
-    /**************************
-     * Module proxy
-     ***************************/
 
     @Override
     public boolean sendMessage(IMMessage msg) {
@@ -798,8 +770,8 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
         if (fakeListText != null) {
             fakeListText.setVisibility(View.GONE);
         }
-        if (isOnMic && roomInfo.getCreator().equals(DemoCache.getAccount())) {
-            for(InteractionView interactionView : interactionGroupView){
+        if (isCreator) {
+            for (InteractionView interactionView : interactionGroupView) {
                 interactionView.rootViewLayout.setVisibility(View.GONE);
                 interactionView.bypassVideoRender.setVisibility(View.GONE);
             }
@@ -814,8 +786,8 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
         if (fakeListText != null) {
             fakeListText.setVisibility(View.VISIBLE);
         }
-        if (isOnMic && roomInfo.getCreator().equals(DemoCache.getAccount())) {
-            for(InteractionView interactionView : interactionGroupView){
+        if (isCreator) {
+            for (InteractionView interactionView : interactionGroupView) {
                 interactionView.rootViewLayout.setVisibility(View.VISIBLE);
                 interactionView.bypassVideoRender.setVisibility(View.VISIBLE);
             }
@@ -833,25 +805,17 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
         return actions;
     }
 
-    /***********************
-     * 连麦相关操作
-     *****************************/
-
+    //  连麦相关操作
     View.OnClickListener baseClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
             switch (v.getId()) {
                 case R.id.input_btn:
-                    getHandler().post(new Runnable() {
-                        @Override
-                        public void run() {
-                            startInputActivity();
-                        }
-                    });
+                    startInputActivity();
                     break;
                 case R.id.share_btn:
                     if (pullUrl != null) {
-                        LogUtil.i(TAG,"pullUrl:"+pullUrl);
+                        LogUtil.i(TAG, "pullUrl:" + pullUrl);
                         ClipboardManager cm = (ClipboardManager) getApplicationContext().getSystemService(Context.CLIPBOARD_SERVICE);
                         // 将文本内容放到系统剪贴板里。
                         cm.setText(pullUrl);
@@ -865,48 +829,59 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
         }
     };
 
-    /**************************
-     * 互动连麦入队/出队操作
-     **************************/
 
-    // 加入连麦队列，由主播端实现
-    protected void joinQueue(CustomNotification customNotification, JSONObject json) {
-
-    }
-
-    // 退出连麦队列，由主播端实现
-    protected void exitQueue(CustomNotification customNotification) {
+    /**
+     * 观众申请加入连麦队列
+     */
+    protected void audienceApplyJoinQueue(CustomNotification customNotification, JSONObject json) {
 
     }
 
-    // 主播选中某人连麦，由观众实现
-    protected void onMicLinking(JSONObject jsonObject) {
+    /**
+     * 观众主动退出连麦队列
+     */
+    protected void audienceExitQueue(CustomNotification customNotification) {
 
     }
 
-    // 观众由于重新进入房间，而拒绝连麦，由主播实现
-    protected void rejectConnecting(String account) {
+    /**
+     * 主播同意自己的连麦请求
+     */
+    protected void onAgreeLinkedByMaster(JSONObject jsonObject) {
 
     }
 
-    // 收到连麦成功消息，由观众端实现
-    protected void onMicConnectedMsg(ChatRoomMessage message) {
+    /**
+     * 主播同意后， 观众拒绝连麦
+     */
+    protected void rejectLinkByAudience(String account) {
+
     }
 
-    // 收到取消连麦消息,由观众的实现
+    /**
+     * 收到有人连麦成功消息
+     */
+    protected void onMicLinkedMsg(ChatRoomMessage message) {
+    }
+
+    /**
+     * 收到有人断开连麦消息
+     */
     protected void onMicDisConnectedMsg(String account) {
     }
 
-    // 子类继承
-    protected void showConnectionView(int index,String account, String nick, int style) {
-        isOnMic = true;
-        updateOnMicName(index,nick);
+
+    /**
+     * 展示其他连麦者的UI
+     */
+    protected void showOtherMicLinkedView(int index, String account, String meetingUid, String nick, int linkStyle) {
+        updateOnMicName(index, nick);
     }
 
     // 设置连麦者昵称
-    protected void updateOnMicName(int index,String nick) {
+    protected void updateOnMicName(int index, String nick) {
         LogUtil.d(TAG, index + " updateOnMicName: " + nick);
-        if(nick == null) {
+        if (nick == null) {
             return;
         }
         interactionGroupView[index].onMicNameText.setVisibility(View.VISIBLE);
@@ -918,14 +893,14 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
 
 
     // 主播断开连麦者，由观众实现
-    protected void onMicCanceling() {
+    protected void onMicDisconnectByMaster() {
 
     }
 
-    protected int getEmptyInteractionView(){
+    protected int getEmptyInteractionView() {
         int index = -1;
-        for(int i = 0 ;i < interactionGroupView.length;i++){
-            if(interactionGroupView[i].account == null){
+        for (int i = 0; i < interactionGroupView.length; i++) {
+            if (interactionGroupView[i].account == null) {
                 index = i;
                 break;
             }
@@ -933,50 +908,61 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
         return index;
     }
 
-    protected int getInteractionViewIndexByAccount(String account){
+    protected int getInteractionViewIndexByAccount(String account) {
         int index = -1;
-        if(account == null) {
-            LogUtil.d(TAG,  " getInteractionViewIndexByAccount account is null");
+        if (account == null) {
+            LogUtil.d(TAG, " getInteractionViewIndexByAccount account is null");
             return index;
         }
-        for(int i = 0 ;i < interactionGroupView.length;i++){
-            if(account.equals(interactionGroupView[i].account)){
+        for (int i = 0; i < interactionGroupView.length; i++) {
+            if (account.equals(interactionGroupView[i].account)) {
                 index = i;
                 break;
             }
         }
         return index;
+    }
+
+
+    @Override
+    protected void showKeyboardDelayed(View focus) {
+        super.showKeyboardDelayed(focus);
     }
 
     protected void doCloseInteractionView(final int index) {
-        if(index == -1){
+        if (index == -1) {
             return;
         }
         InteractionView interactionView = interactionGroupView[index];
-        interactionView.loadingClosingText.setText(style == AVChatType.AUDIO.getValue() ? R.string.audio_closed : R.string.video_closed);
+        interactionView.loadingClosingText.setText(R.string.link_closed);
         interactionView.audienceLoadingLayout.setVisibility(View.VISIBLE);
         interactionView.loadingNameText.setText(!TextUtils.isEmpty(interactionView.account) ? interactionView.account : "");
         interactionView.livingBg.setVisibility(View.GONE);
         interactionView.connectionViewCloseBtn.setVisibility(View.GONE);
         interactionView.connectionCloseConfirmLayout.setVisibility(View.GONE);
+        interactionView.bypassVideoRender.release();
         interactionView.bypassVideoRender.setVisibility(View.GONE);
         interactionView.account = null;
-        getHandler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                resetConnectionView(index);
-            }
-        }, 2000);
+        resetConnectionView(index);
     }
 
     protected void resetConnectionView(int index) {
-        isOnMic = false;
-        interactionGroupView[index].rootViewLayout.setVisibility(View.GONE);
-        interactionGroupView[index].connectionCloseConfirmLayout.setVisibility(View.GONE);
-        interactionGroupView[index].audienceLivingLayout.setVisibility(View.GONE);
-        interactionGroupView[index].audienceLoadingLayout.setVisibility(View.GONE);
-        interactionGroupView[index].connectionViewCloseBtn.setVisibility(View.VISIBLE);
-        interactionGroupView[index].onMicNameText.setVisibility(View.GONE);
+        InteractionView interactionView = interactionGroupView[index];
+        interactionView.rootViewLayout.setVisibility(View.GONE);
+        interactionView.connectionCloseConfirmLayout.setVisibility(View.GONE);
+        interactionView.audienceLivingLayout.setVisibility(View.GONE);
+        interactionView.audienceLoadingLayout.setVisibility(View.GONE);
+        interactionView.connectionViewCloseBtn.setVisibility(View.VISIBLE);
+        interactionView.onMicNameText.setVisibility(View.GONE);
+    }
+
+
+    protected boolean noNeedUpdateVolume() {
+        if (System.currentTimeMillis() - updateVolumeTime < UPDATE_VOLUME_INTERVAL) {
+            return true;
+        }
+        updateVolumeTime = System.currentTimeMillis();
+        return false;
     }
 
     /**
@@ -998,21 +984,24 @@ public abstract class LivePlayerBaseActivity extends TActivity implements Module
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (resultCode == Activity.RESULT_OK && requestCode == InputActivity.REQ_CODE) {
-            // 设置EditText显示的内容
-            String text = data.getStringExtra(InputActivity.EXTRA_TEXT);
-            MoonUtil.identifyFaceExpression(DemoCache.getContext(), messageEditText, text, ImageSpan.ALIGN_BOTTOM);
-            messageEditText.setSelection(text.length());
-            inputPanel.hideInputPanel();
-            // 根据mode显示表情布局或者键盘布局
-            int mode = data.getIntExtra(InputActivity.EXTRA_MODE, InputActivity.MODE_KEYBOARD_COLLAPSE);
-            if (mode == InputActivity.MODE_SHOW_EMOJI) {
-                inputPanel.toggleEmojiLayout();
-            } else if (mode == InputActivity.MODE_SHOW_MORE_FUNC) {
-                inputPanel.toggleActionPanelLayout();
-            }
 
-            //inputPanel.show();
+        if (resultCode != Activity.RESULT_OK || requestCode != InputActivity.REQ_CODE || data == null) {
+            return;
+        }
+
+        // 设置EditText显示的内容
+        String text = data.getStringExtra(InputActivity.EXTRA_TEXT);
+        MoonUtil.identifyFaceExpression(DemoCache.getContext(), messageEditText, text, ImageSpan.ALIGN_BOTTOM);
+        messageEditText.setSelection(text.length());
+        inputPanel.hideInputPanel();
+        // 根据mode显示表情布局或者键盘布局
+        int mode = data.getIntExtra(InputActivity.EXTRA_MODE, InputActivity.MODE_KEYBOARD_COLLAPSE);
+        if (mode == InputActivity.MODE_SHOW_EMOJI) {
+            inputPanel.toggleEmojiLayout();
+        } else if (mode == InputActivity.MODE_SHOW_MORE_FUNC) {
+            inputPanel.toggleActionPanelLayout();
         }
     }
+
+
 }

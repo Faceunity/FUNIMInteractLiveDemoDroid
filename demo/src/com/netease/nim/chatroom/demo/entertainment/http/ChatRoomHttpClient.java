@@ -153,9 +153,8 @@ public class ChatRoomHttpClient {
     /**
      * 主播创建直播间
      */
-    public void masterEnterRoom(String account, String ext, boolean isVideoMode,boolean isPortrait, final ChatRoomHttpCallback<EnterRoomParam> callback) {
+    public void masterEnterRoom(String account, String ext, boolean isVideoMode, boolean isPortrait, final ChatRoomHttpCallback<EnterRoomParam> callback) {
         String url = DemoServers.chatRoomAPIServer() + API_NAME_MASTER_ENTRANCE;
-
         Map<String, String> headers = new HashMap<>(2);
         String appKey = readAppKey();
         headers.put(HEADER_KEY_APP_KEY, appKey);
@@ -178,7 +177,6 @@ public class ChatRoomHttpClient {
                     }
                     return;
                 }
-
                 try {
                     // ret 0
                     JSONObject res = JSONObject.parseObject(response);
@@ -271,10 +269,11 @@ public class ChatRoomHttpClient {
 
     /**
      * 向队列中添加连麦请求
-     * @param roomId    聊天室房间号
-     * @param account   请求连麦用户id
-     * @param ext       连麦请求附加属性
-     * @param callback  请求回调
+     *
+     * @param roomId   聊天室房间号
+     * @param account  请求连麦用户id
+     * @param ext      连麦请求附加属性
+     * @param callback 请求回调
      */
     public void pushMicLink(String roomId, String account, String ext, final ChatRoomHttpCallback<Void> callback) {
         String url = DemoServers.chatRoomAPIServer() + API_NAME_PUSH_MIC_LINK;
@@ -284,13 +283,9 @@ public class ChatRoomHttpClient {
         headers.put(HEADER_KEY_APP_KEY, appKey);
         headers.put(HEADER_KEY_CONTENT_TYPE, "application/x-www-form-urlencoded;charset=utf-8");
 
-        StringBuilder body = new StringBuilder();
-        body.append(REQUEST_ROOM_ID).append("=").append(roomId)
-                .append("&")
-                .append(REQUEST_USER_UID).append("=").append(account)
-                .append("&")
-                .append(REQUEST_ROOM_EXT).append("=").append(ext);
-        String bodyString = body.toString();
+        String bodyString = REQUEST_ROOM_ID + "=" + roomId +
+                "&" + REQUEST_USER_UID + "=" + account +
+                "&" + REQUEST_ROOM_EXT + "=" + ext;
 
         NimHttpClient.getInstance().execute(url, headers, bodyString, new NimHttpClient.NimHttpCallback() {
             @Override
@@ -324,8 +319,9 @@ public class ChatRoomHttpClient {
 
     /**
      * 从队列中取出连麦请求
-     * @param roomId 聊天室房间号
-     * @param account 麦序中的用户id，不填的话取出麦序中的第一个用户
+     *
+     * @param roomId   聊天室房间号
+     * @param account  麦序中的用户id，不填的话取出麦序中的第一个用户
      * @param callback 请求回调
      */
     public void popMicLink(String roomId, String account, final ChatRoomHttpCallback<Void> callback) {

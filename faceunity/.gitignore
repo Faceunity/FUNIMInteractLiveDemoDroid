@@ -1,7 +1,2 @@
 /build
-/src/main/java/com/faceunity/authpack.java
-*.iml
-.gradle
-/local.properties
-/.idea/workspace.xml
-/.idea/libraries
+/src/main/java/com/faceunity/beautycontrolview/authpack.java

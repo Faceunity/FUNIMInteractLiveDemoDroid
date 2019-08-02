@@ -157,7 +157,7 @@ public class InputPanel implements IEmoticonSelectedListener, IAudioRecordCallba
 
     private void initViews() {
         // input bar
-        messageActivityBottomLayout = (LinearLayout) view.findViewById(R.id.messageActivityBottomLayout);
+        messageActivityBottomLayout = view.findViewById(R.id.messageActivityBottomLayout);
         messageInputBar = view.findViewById(R.id.textMessageLayout);
         switchToTextButtonInInputBar = view.findViewById(R.id.buttonTextMessage);
         switchToAudioButtonInInputBar = view.findViewById(R.id.buttonAudioMessage);
@@ -168,13 +168,13 @@ public class InputPanel implements IEmoticonSelectedListener, IAudioRecordCallba
         emojiButtonInInputBar.setVisibility(inputConfig.isEmojiButtonShow ? View.VISIBLE : View.GONE);
 
         sendMessageButtonInInputBar = view.findViewById(R.id.buttonSendMessage);
-        messageEditText = (EditText) view.findViewById(R.id.editTextMessage);
+        messageEditText = view.findViewById(R.id.editTextMessage);
 
         // 语音
-        audioRecordBtn = (Button) view.findViewById(R.id.audioRecord);
+        audioRecordBtn = view.findViewById(R.id.audioRecord);
 
         // 表情
-        emoticonPickerView = (EmoticonPickerView) view.findViewById(R.id.emoticon_picker_view);
+        emoticonPickerView = view.findViewById(R.id.emoticon_picker_view);
 
         // 显示录音按钮
         switchToTextButtonInInputBar.setVisibility(View.GONE);

@@ -7,6 +7,7 @@ import com.alibaba.fastjson.JSONObject;
  * Created by hzxuwen on 2016/3/28.
  */
 public class DisconnectAttachment extends CustomAttachment {
+
     private final String KEY_UID = "uid";
 
     private String account;

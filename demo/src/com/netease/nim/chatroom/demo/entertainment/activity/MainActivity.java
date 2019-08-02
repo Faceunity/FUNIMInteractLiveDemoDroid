@@ -29,7 +29,7 @@ public class MainActivity extends TActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar =  findViewById(R.id.toolbar);
         toolbar.setLogo(R.drawable.actionbar_logo_white);
         setSupportActionBar(toolbar);
 

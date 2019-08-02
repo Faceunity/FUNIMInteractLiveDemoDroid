@@ -22,7 +22,7 @@ import com.netease.nimlib.sdk.auth.AuthServiceObserver;
  * 观众输入房间号activity
  * Created by hzxuwen on 2016/3/25.
  */
-public class EnterRoomActivity extends TActivity implements View.OnClickListener{
+public class EnterRoomActivity extends TActivity implements View.OnClickListener {
     private ClearableEditTextWithIcon roomIdEdit;
     private Button joinBtn;
 
@@ -30,7 +30,7 @@ public class EnterRoomActivity extends TActivity implements View.OnClickListener
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.enter_room_activity);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle(R.string.app_name);
         toolbar.setLogo(R.drawable.actionbar_logo_white);
         setSupportActionBar(toolbar);
@@ -72,10 +72,9 @@ public class EnterRoomActivity extends TActivity implements View.OnClickListener
     };
 
     private void findViews() {
-        roomIdEdit = (ClearableEditTextWithIcon) findViewById(R.id.room_id_edit);
+        roomIdEdit = findViewById(R.id.room_id_edit);
         roomIdEdit.setDeleteImage(R.drawable.nim_grey_delete_icon);
-        joinBtn = (Button) findViewById(R.id.join_btn);
-
+        joinBtn = findViewById(R.id.join_btn);
         joinBtn.setOnClickListener(this);
     }
 

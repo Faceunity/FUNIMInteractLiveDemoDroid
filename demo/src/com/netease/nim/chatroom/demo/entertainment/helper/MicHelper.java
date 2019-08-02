@@ -115,8 +115,8 @@ public class MicHelper {
     }
 
     //发生聊天室更新信息
-    public void sendUpdateRoomExtension(String meetingName, LiveType liveType, boolean typePk, String fromNickName, String toNickName, ChatRoomInfo roomInfo, String roomId) {
-        LogUtil.i(TAG, "sendUpdateRoomExtension,fromNickName:" + fromNickName +",toNickName:"+toNickName+",roomId:"+roomId);
+    public void sendUpdateRoomExtension(String meetingUid, String meetingName, LiveType liveType, boolean typePk, String fromNickName, String toNickName, ChatRoomInfo roomInfo, String roomId) {
+        LogUtil.i(TAG, "sendUpdateRoomExtension,fromNickName:" + fromNickName + ",toNickName:" + toNickName + ",roomId:" + roomId);
         ChatRoomUpdateInfo chatRoomUpdateInfo = new ChatRoomUpdateInfo();
         chatRoomUpdateInfo.setName(roomInfo.getName());
         Map<String, Object> notifyExt = new HashMap<>();
@@ -124,18 +124,20 @@ public class MicHelper {
         notifyExt.put(PushLinkConstant.pkInvitee, toNickName);
         notifyExt.put(PushLinkConstant.isPking, typePk);
         notifyExt.put(PushLinkConstant.meetingName, meetingName);
+        notifyExt.put(PushLinkConstant.meetingUid, meetingUid);
         notifyExt.put("type", liveType == LiveType.VIDEO_TYPE ? AVChatType.VIDEO.getValue() : AVChatType.AUDIO.getValue());
         chatRoomUpdateInfo.setExtension(notifyExt);
-        NIMClient.getService(ChatRoomService.class).updateRoomInfo(roomId,chatRoomUpdateInfo,true,notifyExt);
+        NIMClient.getService(ChatRoomService.class).updateRoomInfo(roomId, chatRoomUpdateInfo, true, notifyExt);
     }
 
     /**
      * 发送PK邀请命令
-     * @param toAccount 需要邀请的主播
-     * @param command PK命令
+     *
+     * @param toAccount   需要邀请的主播
+     * @param command     PK命令
      * @param meetingName 音视频房间号
      */
-    public void sendCustomPKNotify(String toAccount,final int command,String meetingName){
+    public void sendCustomPKNotify(String toAccount, final int command, String meetingName) {
         CustomNotification notification = new CustomNotification();
         notification.setSessionId(toAccount);
         notification.setSessionType(SessionTypeEnum.P2P);
@@ -168,17 +170,27 @@ public class MicHelper {
         });
     }
 
-    // 连麦者成功连上麦后，主播全局通知
+    /**
+     * 连麦者成功连上麦后，主播全局通知
+     */
     public void sendConnectedMicMsg(String roomId, InteractionMember member) {
-        if (member != null) {
-            ConnectedAttachment attachment = new ConnectedAttachment(member.getAccount(), member.getName(), member.getAvatar(), member.getAvChatType().getValue());
-            ChatRoomMessage message = ChatRoomMessageBuilder.createChatRoomCustomMessage(roomId, attachment);
-            NIMClient.getService(ChatRoomService.class).sendMessage(message, false);
+        if (member == null) {
+            return;
         }
+        ConnectedAttachment attachment = new ConnectedAttachment(member.getAccount(),
+                member.getMeetingUid(),
+                member.getName(),
+                member.getAvatar(),
+                member.getAvChatType().getValue());
+
+        ChatRoomMessage message = ChatRoomMessageBuilder.createChatRoomCustomMessage(roomId, attachment);
+        NIMClient.getService(ChatRoomService.class).sendMessage(message, false);
+
     }
 
     // 发送断开连麦自定义消息通知全局
     public void sendBrokeMicMsg(String roomId, String account) {
+
         DisconnectAttachment attachment = new DisconnectAttachment(account);
         ChatRoomMessage message = ChatRoomMessageBuilder.createChatRoomCustomMessage(roomId, attachment);
         NIMClient.getService(ChatRoomService.class).sendMessage(message, false);
@@ -186,6 +198,7 @@ public class MicHelper {
 
     // 更新成员连麦状态
     public void updateMemberInChatRoom(String roomId, InteractionMember member) {
+
         JSONObject jsonObject = new JSONObject();
         jsonObject.put(PushLinkConstant.style, member.getAvChatType().getValue());
         jsonObject.put(PushLinkConstant.state, MicStateEnum.CONNECTED.getValue());
@@ -193,7 +206,7 @@ public class MicHelper {
         JSONObject info = new JSONObject();
         info.put(PushLinkConstant.nick, member.getName());
         info.put(PushLinkConstant.avatar, member.getAvatar());
-
+        info.put(PushLinkConstant.meetingUid, AVChatManager.getInstance().getUidByAccount(member.getAccount()));
         jsonObject.put(PushLinkConstant.info, info);
 
         NIMClient.getService(ChatRoomService.class).updateQueue(roomId, member.getAccount(), jsonObject.toString()).setCallback(new RequestCallback<Void>() {
@@ -227,6 +240,7 @@ public class MicHelper {
             public void onSuccess(AVChatData avChatData) {
                 LogUtil.d(TAG, "join channel success");
                 callback.onJoinChannelSuccess();
+
             }
 
             @Override

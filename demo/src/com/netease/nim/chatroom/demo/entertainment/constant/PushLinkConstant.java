@@ -6,6 +6,7 @@ package com.netease.nim.chatroom.demo.entertainment.constant;
 public class PushLinkConstant {
     public final static String roomid = "roomid";
     public final static String meetingName = "meetingName";
+    public final static String meetingUid = "meetingUid";
     public final static String orientation = "orientation";
     public final static String pkRoomName = "room_name";
 

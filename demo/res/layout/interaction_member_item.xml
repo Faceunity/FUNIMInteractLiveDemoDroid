@@ -16,8 +16,8 @@
         android:layout_height="20dp"
         android:layout_below="@id/member_avatar"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="5dp"
-        android:layout_marginTop="6dp">
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="5dp">
 
         <TextView
             android:id="@+id/member_name"
@@ -28,7 +28,7 @@
             android:textSize="9sp" />
 
         <Button
-            android:id="@+id/member_link_btn"
+            android:id="@+id/vedio_link_btn"
             android:layout_width="63dp"
             android:layout_height="20dp"
             android:layout_centerHorizontal="true"

@@ -12,7 +12,7 @@
         android:id="@+id/video_mark_blank_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"></RelativeLayout>
+        android:layout_weight="1"/>
 
     <LinearLayout
 
@@ -45,7 +45,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
-            android:background="@color/color_white_b3ffffff"></View>
+            android:background="@color/color_white_b3ffffff"/>
 
         <RelativeLayout
             android:id="@+id/video_mark_static_rl"
@@ -83,7 +83,7 @@
             android:layout_marginLeft="10dp"
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
-            android:background="@color/color_white_b3ffffff"></View>
+            android:background="@color/color_white_b3ffffff"/>
 
         <RelativeLayout
             android:id="@+id/video_mark_dynamic_rl"
@@ -119,7 +119,7 @@
             android:layout_marginLeft="10dp"
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
-            android:background="@color/color_white_b3ffffff"></View>
+            android:background="@color/color_white_b3ffffff"/>
 
         <RelativeLayout
             android:id="@+id/video_mark_close_rl"
@@ -155,7 +155,7 @@
             android:id="@+id/video_clarity_divider_bottom"
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
-            android:background="@color/color_white_b3ffffff"></View>
+            android:background="@color/color_white_b3ffffff"/>
 
         <TextView
             android:id="@+id/video_mark_button_cancel"

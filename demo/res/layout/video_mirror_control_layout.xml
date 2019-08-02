@@ -12,7 +12,7 @@
         android:id="@+id/video_mirror_blank_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"></RelativeLayout>
+        android:layout_weight="1"/>
 
     <LinearLayout
 
@@ -47,7 +47,7 @@
             android:layout_marginLeft="10dp"
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
-            android:background="@color/color_white_b3ffffff"></View>
+            android:background="@color/color_white_b3ffffff"/>
 
         <RelativeLayout
             android:id="@+id/video_mirror_local_rl"
@@ -78,7 +78,7 @@
             android:layout_marginLeft="10dp"
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
-            android:background="@color/color_white_b3ffffff"></View>
+            android:background="@color/color_white_b3ffffff"/>
 
         <RelativeLayout
             android:id="@+id/video_mirror_push_rl"
@@ -109,7 +109,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="0.5dp"
-            android:background="@color/color_white_b3ffffff"></View>
+            android:background="@color/color_white_b3ffffff"/>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -135,7 +135,7 @@
             <View
                 android:layout_width="0.5dp"
                 android:layout_height="match_parent"
-                android:background="@color/color_white_b3ffffff"></View>
+                android:background="@color/color_white_b3ffffff"/>
 
             <TextView
                 android:id="@+id/video_mirror_button_confirm"

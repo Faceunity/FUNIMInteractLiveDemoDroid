@@ -3,10 +3,10 @@
     android:id="@+id/interaction_group_layout"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_alignParentBottom="true"
     android:layout_alignParentRight="true"
-    android:layout_marginBottom="40dp"
+    android:layout_alignParentBottom="true"
     android:layout_marginRight="10dp"
+    android:layout_marginBottom="40dp"
     android:orientation="vertical">
 
     <!-- 连麦观众的播放画面 -->
@@ -24,7 +24,6 @@
     <include
         android:id="@+id/interaction_view_layout_1"
         layout="@layout/interaction_view_layout" />
-
 
 
 </LinearLayout>

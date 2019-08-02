@@ -20,12 +20,19 @@
         android:text="@string/live_start"
         android:textColor="@color/color_blue_238efa" />
 
+    <com.faceunity.beautycontrolview.BeautyControlView
+        android:id="@+id/fu_beauty_control"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/x366"
+        android:layout_gravity="bottom"
+        android:layout_marginBottom="@dimen/x180"></com.faceunity.beautycontrolview.BeautyControlView>
+
     <LinearLayout
         android:id="@+id/start_live_control_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="@dimen/x26">
+        android:layout_marginBottom="25dp">
 
         <ImageButton
             android:id="@+id/start_screen_btn"
@@ -50,8 +57,8 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
-            android:visibility="gone"
             android:layout_toRightOf="@id/start_switch_btn"
-            android:background="@drawable/ic_beauty_open_selector" />
+            android:background="@drawable/ic_beauty_open_selector"
+            android:visibility="gone" />
     </LinearLayout>
 </FrameLayout>

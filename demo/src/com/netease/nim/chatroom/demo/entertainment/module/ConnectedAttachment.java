@@ -7,12 +7,15 @@ import com.alibaba.fastjson.JSONObject;
  * Created by hzxuwen on 2016/3/28.
  */
 public class ConnectedAttachment extends CustomAttachment {
+
     private final String KEY_UID = "uid";
+    private final String KEY_MEETINGUID = "meetingUid";
     private final String KEY_NICK = "nick";
     private final String KEY_AVATAR = "AVATAR";
     private final String KEY_STYLE = "style";
 
     private String account;
+    private String meetingUid;
     private String nick;
     private String avatar;
     private int style;
@@ -21,9 +24,10 @@ public class ConnectedAttachment extends CustomAttachment {
         super(CustomAttachmentType.connectedMic);
     }
 
-    public ConnectedAttachment(String account, String nick, String avatar, int style) {
+    public ConnectedAttachment(String account, String meetingUid, String nick, String avatar, int style) {
         this();
         this.account = account;
+        this.meetingUid = meetingUid;
         this.nick = nick;
         this.avatar = avatar;
         this.style = style;
@@ -32,6 +36,7 @@ public class ConnectedAttachment extends CustomAttachment {
     @Override
     protected void parseData(JSONObject data) {
         this.account = data.getString(KEY_UID);
+        this.meetingUid = data.getString(KEY_MEETINGUID);
         this.nick = data.getString(KEY_NICK);
         this.avatar = data.getString(KEY_AVATAR);
         this.style = data.getIntValue(KEY_STYLE);
@@ -42,6 +47,7 @@ public class ConnectedAttachment extends CustomAttachment {
         JSONObject data = new JSONObject();
         data.put(KEY_UID, account);
         data.put(KEY_NICK, nick);
+        data.put(KEY_MEETINGUID, meetingUid);
         data.put(KEY_AVATAR, avatar);
         data.put(KEY_STYLE, style);
         return data;
@@ -77,5 +83,13 @@ public class ConnectedAttachment extends CustomAttachment {
 
     public void setStyle(int style) {
         this.style = style;
+    }
+
+    public String getMeetingUid() {
+        return meetingUid;
+    }
+
+    public void setMeetingUid(String meetingUid) {
+        this.meetingUid = meetingUid;
     }
 }

@@ -7,15 +7,19 @@ import com.netease.nimlib.sdk.avchat.constant.AVChatType;
  * Created by hzxuwen on 2016/7/15.
  */
 public class InteractionMember {
+
     private String account;
+    private String meetingUid;
     private String name;
     private String avatar;
     private AVChatType avChatType;
     private boolean isSelected;
     private MicStateEnum micStateEnum;
 
-    public InteractionMember(String account, String name, String avatar, AVChatType avChatType) {
+    public InteractionMember(String account, String meetingUid, String name, String avatar, AVChatType avChatType) {
+
         this.account = account;
+        this.meetingUid = meetingUid;
         this.name = name;
         this.avatar = avatar;
         this.avChatType = avChatType;
@@ -69,5 +73,13 @@ public class InteractionMember {
 
     public void setMicStateEnum(MicStateEnum micStateEnum) {
         this.micStateEnum = micStateEnum;
+    }
+
+    public String getMeetingUid() {
+        return meetingUid;
+    }
+
+    public void setMeetingUid(String meetingUid) {
+        this.meetingUid = meetingUid;
     }
 }
