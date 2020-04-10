@@ -4,20 +4,20 @@ def getGitVersion() {
     try {
         return 'git rev-parse --short HEAD'.execute().text.trim()
     } catch (Throwable th) {
-        return "";
+        return ""
     }
 }
 
 android {
     compileSdkVersion 28
-    buildToolsVersion = '27.0.3'
+    buildToolsVersion = '28.0.3'
 
     useLibrary 'org.apache.http.legacy'
 
     defaultConfig {
         applicationId "com.netease.nim.entertainment.demo"
-        minSdkVersion 16
-        targetSdkVersion 26
+        minSdkVersion 18
+        targetSdkVersion 28
         versionCode rootProject.ext.versionCode
         versionName rootProject.ext.versionName
         buildConfigField "String", "GIT_REVISION", "\"${getGitVersion()}\""
@@ -59,7 +59,6 @@ android {
             assets.srcDirs = ['assets']
             jniLibs.srcDirs = ['libs']
         }
-
     }
 
     lintOptions {
@@ -78,23 +77,27 @@ android {
     }
     flavorDimensions "type"
 
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
+
 }
 
 dependencies {
-    api fileTree(include: ['*.jar'], dir: 'libs')
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support:design:28.0.0'
-        // 基础功能 (必需)
-        implementation 'com.netease.nimlib:basesdk:6.4.0'
-        // 音视频和互动白板服务需要
-        implementation 'com.netease.nimlib:nrtc:6.4.0'
-        // 音视频需要
-        implementation 'com.netease.nimlib:avchat:6.4.0'
-        // 聊天室需要
-        implementation 'com.netease.nimlib:chatroom:6.4.0'
+    // 基础功能 (必需)
+    implementation 'com.netease.nimlib:basesdk:6.10.0'
+    // 音视频和互动白板服务需要
+    implementation 'com.netease.nimlib:nrtc:6.10.0'
+    // 音视频需要
+    implementation 'com.netease.nimlib:avchat:6.10.0'
+    // 聊天室需要
+    implementation 'com.netease.nimlib:chatroom:6.10.0'
+    implementation 'com.alibaba:fastjson:1.2.62'
     implementation 'com.jakewharton:butterknife:8.4.0'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.4.0'
-    implementation files('libs/neliveplayer-2.4.1.jar')
     implementation project(path: ':faceunity')
 }
-

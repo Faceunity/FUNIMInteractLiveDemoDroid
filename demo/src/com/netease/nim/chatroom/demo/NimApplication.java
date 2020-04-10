@@ -5,7 +5,6 @@ import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.faceunity.beautycontrolview.FURenderer;
 import com.netease.nim.chatroom.demo.base.util.ScreenUtil;
 import com.netease.nim.chatroom.demo.base.util.crash.AppCrashHandler;
 import com.netease.nim.chatroom.demo.base.util.log.LogUtil;
@@ -36,7 +35,6 @@ public class NimApplication extends Application {
         DemoCache.setContext(this);
 
         NIMClient.init(this, getLoginInfo(), getOptions());
-        FURenderer.initFURenderer(getApplicationContext());
 
         // crash handler
         AppCrashHandler.getInstance(this);
