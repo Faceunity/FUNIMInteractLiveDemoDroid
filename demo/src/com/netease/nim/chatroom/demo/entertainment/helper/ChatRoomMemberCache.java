@@ -48,9 +48,7 @@ public class ChatRoomMemberCache {
     }
 
     public void clearRoomCache(String roomId) {
-        if (cache.containsKey(roomId)) {
-            cache.remove(roomId);
-        }
+        cache.remove(roomId);
     }
 
     public ChatRoomMember getChatRoomMember(String roomId, String account) {
@@ -61,7 +59,7 @@ public class ChatRoomMemberCache {
         return null;
     }
 
-    public void saveMyMember(ChatRoomMember chatRoomMember) {
+    public void saveSelfMember(ChatRoomMember chatRoomMember) {
         saveMember(chatRoomMember);
     }
 
@@ -181,22 +179,19 @@ public class ChatRoomMemberCache {
         NIMClient.getService(ChatRoomServiceObserver.class).observeReceiveMessage(incomingChatRoomMsg, register);
     }
 
-    private Observer<List<ChatRoomMessage>> incomingChatRoomMsg = new Observer<List<ChatRoomMessage>>() {
-        @Override
-        public void onEvent(List<ChatRoomMessage> messages) {
-            if (messages == null || messages.isEmpty()) {
-                return;
+    private Observer<List<ChatRoomMessage>> incomingChatRoomMsg = (Observer<List<ChatRoomMessage>>) messages -> {
+        if (messages == null || messages.isEmpty()) {
+            return;
+        }
+
+        for (IMMessage msg : messages) {
+            if (msg == null) {
+                LogUtil.e(TAG, "receive chat room message null");
+                continue;
             }
 
-            for (IMMessage msg : messages) {
-                if (msg == null) {
-                    LogUtil.e(TAG, "receive chat room message null");
-                    continue;
-                }
-
-                if (msg.getMsgType() == MsgTypeEnum.notification) {
-                    handleNotification(msg);
-                }
+            if (msg.getMsgType() == MsgTypeEnum.notification) {
+                handleNotification(msg);
             }
         }
     };
@@ -236,6 +231,7 @@ public class ChatRoomMemberCache {
                 member.setMemberType(MemberType.ADMIN);
                 break;
             case ChatRoomManagerRemove:
+            case ChatRoomCommonAdd:
                 member.setMemberType(MemberType.NORMAL);
                 break;
             case ChatRoomMemberBlackAdd:
@@ -250,9 +246,6 @@ public class ChatRoomMemberCache {
             case ChatRoomMemberMuteRemove:
                 member.setMuted(false);
                 member.setMemberType(MemberType.GUEST);
-                break;
-            case ChatRoomCommonAdd:
-                member.setMemberType(MemberType.NORMAL);
                 break;
             case ChatRoomCommonRemove:
                 member.setMemberType(MemberType.GUEST);

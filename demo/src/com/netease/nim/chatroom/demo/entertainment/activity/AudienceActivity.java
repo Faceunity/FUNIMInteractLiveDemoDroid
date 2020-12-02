@@ -9,7 +9,6 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -31,9 +30,9 @@ import com.netease.nim.chatroom.demo.entertainment.constant.MicApplyEnum;
 import com.netease.nim.chatroom.demo.entertainment.constant.MicStateEnum;
 import com.netease.nim.chatroom.demo.entertainment.constant.PushLinkConstant;
 import com.netease.nim.chatroom.demo.entertainment.constant.PushMicNotificationType;
+import com.netease.nim.chatroom.demo.entertainment.constant.PushType;
 import com.netease.nim.chatroom.demo.entertainment.helper.ChatRoomMemberCache;
 import com.netease.nim.chatroom.demo.entertainment.helper.MicHelper;
-import com.netease.nim.chatroom.demo.entertainment.helper.SimpleCallback;
 import com.netease.nim.chatroom.demo.entertainment.http.ChatRoomHttpClient;
 import com.netease.nim.chatroom.demo.entertainment.model.SimpleAVChatStateObserver;
 import com.netease.nim.chatroom.demo.entertainment.model.SyncContent;
@@ -54,7 +53,6 @@ import com.netease.nimlib.sdk.NIMClient;
 import com.netease.nimlib.sdk.RequestCallback;
 import com.netease.nimlib.sdk.avchat.AVChatManager;
 import com.netease.nimlib.sdk.avchat.AVChatStateObserver;
-import com.netease.nimlib.sdk.avchat.constant.AVChatResCode;
 import com.netease.nimlib.sdk.avchat.constant.AVChatType;
 import com.netease.nimlib.sdk.avchat.constant.AVChatUserRole;
 import com.netease.nimlib.sdk.avchat.constant.AVChatVideoCaptureOrientation;
@@ -148,6 +146,7 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
     // 加入音视频房间的帐号
     private Set<String> joinedChannelAccountSet = new HashSet<>();
 
+    private boolean isMasterLeaved = false;
 
     public static void start(Context context, String roomId) {
         Intent intent = new Intent();
@@ -164,8 +163,8 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
         findViews();
         findInputViews();
         updateRoomUI(true);
-        enterRoom();
-        requestBasicPermission(); // 申请APP基本权限.同意之后，请求拉流
+        enterChatRoom();
+        requestBasicPermission();
         NESDKConfig config = new NESDKConfig();
         config.privateConfig = new NEPlayerConfig();
         NELivePlayer.init(this, config);
@@ -224,6 +223,11 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
         if (videoPlayer != null) {
             videoPlayer.resetVideo();
         }
+        if (isMeOnMic) {
+            MicHelper.getInstance().leaveAndReleaseAVRoom(selfLinkType == AVChatType.VIDEO.getValue(),
+                    liveType == LiveType.VIDEO_TYPE,
+                    meetingName);
+        }
         super.onDestroy();
     }
 
@@ -255,9 +259,8 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
                     @Override
                     public void doOkAction() {
                         if (isMeOnMic) {
-                            MicHelper.getInstance().leaveChannel(selfLinkType == AVChatType.VIDEO.getValue(),
+                            MicHelper.getInstance().leaveAndReleaseAVRoom(selfLinkType == AVChatType.VIDEO.getValue(),
                                     liveType == LiveType.VIDEO_TYPE,
-                                    true,
                                     meetingName);
                             mVideoCapturer = null;
                         }
@@ -295,29 +298,29 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
                         pullUrl = enterRoomParam.getPullUrl();
                         LogUtil.d(TAG, "fetchLiveUrl pullUrl：" + pullUrl);
                         initAudienceParam();
-                        videoView.setOnVolumeCallBack(new NEVideoView.OnVolumeCallBack() {
-                            @Override
-                            public void callBack(String json) {
-                                if (noNeedUpdateVolume()) {
-                                    return;
-                                }
-                                SyncContent syncContent = new SyncContent();
-                                List<SyncContent.NodesInfo.NodesInfoBean> nodeList = syncContent.getNodesInfoBeanByJson(json);
-                                for (SyncContent.NodesInfo.NodesInfoBean node : nodeList) {
-                                    for (InteractionView interactionView : interactionGroupView) {
-                                        if (!TextUtils.isEmpty(meetingUid) && meetingUid.equals(node.getUid())) {
-                                            masterVolume.setText("音量:" + node.getEnergy());
-                                            break;
-                                        }
-
-                                        if (!TextUtils.isEmpty(interactionView.meetingUid) && interactionView.meetingUid.equals(node.getUid())) {
-                                            interactionView.audienceVolume.setText("音量:" + node.getEnergy());
-                                            break;
-                                        }
-                                    }
-                                }
-
+                        videoView.setOnVolumeCallBack(json -> {
+                            if (noNeedUpdateVolume()) {
+                                return;
                             }
+                            SyncContent syncContent = new SyncContent();
+                            List<SyncContent.NodesInfo.NodesInfoBean> nodeList = syncContent.getNodesInfoBeanByJson(json);
+
+                            for (SyncContent.NodesInfo.NodesInfoBean node : nodeList) {
+
+                                for (InteractionView interactionView : interactionGroupView) {
+                                    if (TextUtils.equals(meetingUid, node.getUid())) {
+                                        masterVolume.setText("音量:" + node.getEnergy());
+                                        break;
+                                    }
+
+                                    if (TextUtils.equals(interactionView.meetingUid, node.getUid())) {
+                                        interactionView.audienceVolume.setText("音量:" + node.getEnergy());
+                                        break;
+                                    }
+
+                                }
+                            }
+
                         });
                     }
 
@@ -429,26 +432,18 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
         giftView.setAdapter(adapter);
 
         giftLayout.setOnClickListener(buttonClickListener);
-        giftView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                giftPosition = position;
-            }
-        });
+        giftView.setOnItemClickListener((parent, view, position, id) -> giftPosition = position);
 
     }
 
-    protected void updateUI() {
-        super.updateUI();
-        ChatRoomMemberCache.getInstance().fetchMember(roomId, roomInfo.getCreator(), new SimpleCallback<ChatRoomMember>() {
-            @Override
-            public void onResult(boolean success, ChatRoomMember result) {
-                if (success) {
-                    masterNick = result.getNick();
-                    String nick = TextUtils.isEmpty(masterNick) ? result.getAccount() : masterNick;
-                    masterNameText.setText(nick);
-                    finishNameText.setText(nick);
-                }
+    protected void enterChatRoomSuccess() {
+        super.enterChatRoomSuccess();
+        ChatRoomMemberCache.getInstance().fetchMember(roomId, roomInfo.getCreator(), (success, result) -> {
+            if (success) {
+                masterNick = result.getNick();
+                String nick = TextUtils.isEmpty(masterNick) ? result.getAccount() : masterNick;
+                masterNameText.setText(nick);
+                finishNameText.setText(nick);
             }
         });
 
@@ -462,41 +457,52 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
     }
 
     AVChatStateObserver stateObserver = new SimpleAVChatStateObserver() {
+
         @Override
-        public void onJoinedChannel(int i, String s, String s1, int i1) {
-            if (i == AVChatResCode.JoinChannelCode.OK && liveType == LiveType.AUDIO_TYPE) {
-                AVChatManager.getInstance().setSpeaker(true);
-            }
+        public void onJoinedChannel(int code, String s, String s1, int i1) {
+            AVChatManager.getInstance().setSpeaker(true);
+            LogUtil.i(TAG, "onJoinedChannel , code: " + code);
         }
 
         @Override
-        public void onUserJoined(String s) {
-            if (liveType == LiveType.VIDEO_TYPE && TextUtils.equals(s, roomInfo.getCreator())) {
+        public void onUserJoined(String account) {
+            LogUtil.d(TAG, "onUserJoined , account : " + account);
+            if (liveType == LiveType.VIDEO_TYPE && TextUtils.equals(account, roomInfo.getCreator())) {
+                setSelfToNormalRender();
                 AVChatManager.getInstance().setupRemoteVideoRender(roomInfo.getCreator(), null, false, 0);
                 AVChatManager.getInstance().setupRemoteVideoRender(roomInfo.getCreator(), videoRender, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
-            } else if (!TextUtils.equals(s, roomInfo.getCreator())) {
-                joinedChannelAccountSet.add(s);
+            } else if (!TextUtils.equals(account, roomInfo.getCreator())) {
+                joinedChannelAccountSet.add(account);
                 showOtherOnMicMember();
             }
+
             if (liveType != LiveType.VIDEO_TYPE) {
                 preparedText.setVisibility(View.GONE);
             }
+
+
+            if (TextUtils.equals(account, roomInfo.getCreator())) {
+                isMasterLeaved = false;
+            }
         }
 
         @Override
-        public void onUserLeave(String s, int i) {
-            LogUtil.d(TAG, "onUserLeave");
-            if (s.equals(roomInfo.getCreator())) {
-                MicHelper.getInstance().leaveChannel(selfLinkType == AVChatType.VIDEO.getValue(),
-                        liveType == LiveType.VIDEO_TYPE,
-                        true,
-                        meetingName);
+        public void onUserLeave(String account, int i) {
+            LogUtil.d(TAG, "onUserLeave , account : " + account + ", pushType : " + pushType);
+            if (pushType == PushType.ROOM_PUSH_TYPE && account.equals(roomInfo.getCreator())) {
+                setSelfToBigRender();
+                return;
+            }
+
+            if (account.equals(roomInfo.getCreator())) {
+                MicHelper.getInstance().leaveAndReleaseAVRoom(selfLinkType == AVChatType.VIDEO.getValue(),
+                        liveType == LiveType.VIDEO_TYPE, meetingName);
                 mVideoCapturer = null;
-            } else if (s.equals(DemoCache.getAccount())) {
+            } else if (account.equals(DemoCache.getAccount())) {
                 closeAllMicView();
                 switchVideoPlayer();
             } else {
-                int index = getInteractionViewIndexByAccount(s);
+                int index = getInteractionViewIndexByAccount(account);
                 doCloseInteractionView(index);
             }
         }
@@ -527,14 +533,44 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
             if (noNeedUpdateVolume()) {
                 return;
             }
-            masterVolume.setText("音量:" + String.valueOf(speakers.get(roomInfo.getCreator())));
+            Integer volume = speakers.get(roomInfo.getCreator());
+            masterVolume.setText(volume != null ? "音量:" + volume : "音量：0");
             for (InteractionView interactionView : interactionGroupView) {
                 if (speakers.containsKey(interactionView.account)) {
-                    interactionView.audienceVolume.setText("音量:" + speakers.get(interactionView.account));
+                    volume = speakers.get(interactionView.account);
+                    interactionView.audienceVolume.setText(volume != null ? "音量:" + volume : "音量:0");
                 }
             }
         }
     };
+
+    private void setSelfToNormalRender() {
+
+        if (liveType != LiveType.VIDEO_TYPE) {
+            return;
+        }
+
+        InteractionView interactionView = interactionGroupView[0];
+        if (interactionView.rootViewLayout.getVisibility() == View.VISIBLE) {
+            return;
+        }
+        AVChatManager.getInstance().setupLocalVideoRender(null, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
+        AVChatManager.getInstance().setupLocalVideoRender(interactionView.bypassVideoRender, false, 0);
+        interactionView.rootViewLayout.setVisibility(View.VISIBLE);
+    }
+
+
+    private void setSelfToBigRender() {
+
+        if (liveType != LiveType.VIDEO_TYPE) {
+            return;
+        }
+
+        InteractionView interactionView = interactionGroupView[0];
+        AVChatManager.getInstance().setupLocalVideoRender(null, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
+        AVChatManager.getInstance().setupLocalVideoRender(videoRender, false, 0);
+        interactionView.rootViewLayout.setVisibility(View.GONE);
+    }
 
     private void registerAudienceObservers(boolean register) {
         AVChatManager.getInstance().observeAVChatState(stateObserver, register);
@@ -552,6 +588,10 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
                     clearChatRoom();
                     break;
                 case R.id.interaction_btn:
+                    if (isMasterLeaved) {
+                        Toast.makeText(AudienceActivity.this, "主播已离开直播间", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     showInteractionLayout();
                     break;
                 case R.id.gift_btn:
@@ -562,6 +602,9 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
                     sendLike();
                     break;
                 case R.id.switch_btn:
+                    if (mVideoCapturer == null) {
+                        return;
+                    }
                     mVideoCapturer.switchCamera();
                     break;
                 case R.id.gift_layout:
@@ -572,6 +615,7 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
                     sendGift();
                     break;
                 case R.id.audience_interaction_layout:
+                case R.id.tips_btn:
                     interactionLayout.setVisibility(View.GONE);
                     break;
                 case R.id.vedio_link_btn:
@@ -579,12 +623,21 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
                         showPKingInfo();
                         return;
                     }
+                    if (isMasterLeaved) {
+                        Toast.makeText(AudienceActivity.this, "主播已离开直播间", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     micApplyEnum = MicApplyEnum.VIDEO_VIDEO;
                     requestLivePermission();
                     break;
                 case R.id.audio_link_btn:
                     if (isPk) {
                         showPKingInfo();
+                        return;
+                    }
+                    if (isMasterLeaved) {
+                        Toast.makeText(AudienceActivity.this, "主播已离开直播间", Toast.LENGTH_SHORT).show();
                         return;
                     }
                     micApplyEnum = MicApplyEnum.VIDEO_AUDIO;
@@ -600,9 +653,6 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
                     }
                     micApplyEnum = MicApplyEnum.AUDIO;
                     requestLivePermission();
-                    break;
-                case R.id.tips_btn:
-                    interactionLayout.setVisibility(View.GONE);
                     break;
             }
         }
@@ -779,8 +829,7 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
             Iterator<Entry<String, String>> entries = linkedInfoList.iterator();
             while (entries.hasNext()) {
                 Entry<String, String> entry = entries.next();
-                String account = entry.key;
-                if (joinedChannelAccountSet.contains(account)) {
+                if (joinedChannelAccountSet.contains(entry.key)) {
                     showSingleMicMember(entry);
                     entries.remove();
                 }
@@ -807,11 +856,11 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
         try {
             JSONObject jsonObject = JSONObject.parseObject(ext);
             if (jsonObject != null) {
-                JSONObject info = (JSONObject) jsonObject.get(PushLinkConstant.info);
-                nick = info.getString(PushLinkConstant.nick);
-                meetingUid = info.getString(PushLinkConstant.meetingUid);
-                micStateEnum = MicStateEnum.typeOfValue(jsonObject.getIntValue(PushLinkConstant.state));
-                style = jsonObject.getInteger(PushLinkConstant.style);
+                JSONObject info = (JSONObject) jsonObject.get(PushLinkConstant.INFO);
+                nick = info.getString(PushLinkConstant.NICK);
+                meetingUid = info.getString(PushLinkConstant.MEETING_UID);
+                micStateEnum = MicStateEnum.typeOfValue(jsonObject.getIntValue(PushLinkConstant.LINK_STATE));
+                style = jsonObject.getInteger(PushLinkConstant.LINK_STYLE);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -923,13 +972,13 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
     private String getPushLinkExt(int style) {
 
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(PushLinkConstant.style, style);
-        jsonObject.put(PushLinkConstant.state, MicStateEnum.WAITING.getValue());
+        jsonObject.put(PushLinkConstant.LINK_STYLE, style);
+        jsonObject.put(PushLinkConstant.LINK_STATE, MicStateEnum.WAITING.getValue());
 
         JSONObject infoJSON = new JSONObject();
-        infoJSON.put(PushLinkConstant.nick, DemoCache.getUserInfo().getName());
-        infoJSON.put(PushLinkConstant.avatar, AVATAR_DEFAULT);
-        jsonObject.put(PushLinkConstant.info, infoJSON);
+        infoJSON.put(PushLinkConstant.NICK, DemoCache.getUserInfo().getName());
+        infoJSON.put(PushLinkConstant.AVATAR, AVATAR_DEFAULT);
+        jsonObject.put(PushLinkConstant.INFO, infoJSON);
 
         return jsonObject.toString();
     }
@@ -942,19 +991,19 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
         notification.setSessionType(SessionTypeEnum.P2P);
 
         JSONObject json = new JSONObject();
-        json.put(PushLinkConstant.roomid, roomId);
-        json.put(PushLinkConstant.style, style);
-        json.put(PushLinkConstant.command, command);
+        json.put(PushLinkConstant.ROOM_ID, roomId);
+        json.put(PushLinkConstant.LINK_STYLE, style);
+        json.put(PushLinkConstant.COMMAND, command);
         JSONObject infoJSON = new JSONObject();
-        infoJSON.put(PushLinkConstant.nick, DemoCache.getUserInfo().getName());
-        infoJSON.put(PushLinkConstant.avatar, AVATAR_DEFAULT);
-        json.put(PushLinkConstant.info, infoJSON);
+        infoJSON.put(PushLinkConstant.NICK, DemoCache.getUserInfo().getName());
+        infoJSON.put(PushLinkConstant.AVATAR, AVATAR_DEFAULT);
+        json.put(PushLinkConstant.INFO, infoJSON);
         notification.setContent(json.toString());
 
         NIMClient.getService(MsgService.class).sendCustomNotification(notification).setCallback(new RequestCallback<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                LogUtil.d(TAG, "send push mic success");
+                LogUtil.d(TAG, "send push mic success ， json : " + json);
                 isSelfAlreadyApply = true;
             }
 
@@ -1018,12 +1067,12 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
             return;
         }
 
-        if (!jsonObject.containsKey(PushLinkConstant.style)) {
+        if (!jsonObject.containsKey(PushLinkConstant.LINK_STYLE)) {
             return;
         }
 
         isMasterAgreeToLink = true;
-        selfLinkType = jsonObject.getIntValue(PushLinkConstant.style);
+        selfLinkType = jsonObject.getIntValue(PushLinkConstant.LINK_STYLE);
 
         requestLivePermission();
     }
@@ -1034,8 +1083,8 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
         AVChatManager.getInstance().enableRtc();
         if (mVideoCapturer == null) {
             mVideoCapturer = AVChatVideoCapturerFactory.createCameraCapturer(true);
-            AVChatManager.getInstance().setupVideoCapturer(mVideoCapturer);
         }
+        AVChatManager.getInstance().setupVideoCapturer(mVideoCapturer);
         AVChatParameters parameters = new AVChatParameters();
         AVChatManager.getInstance().setParameter(AVChatParameters.KEY_AUDIO_REPORT_SPEAKER, true);
         parameters.setBoolean(AVChatParameters.KEY_SESSION_LIVE_MODE, true);
@@ -1054,13 +1103,11 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
         if (selfLinkType == AVChatType.VIDEO.getValue()) {
             AVChatManager.getInstance().startVideoPreview();
         }
-        MicHelper.getInstance().joinChannel(meetingName,
+        MicHelper.getInstance().joinAVRoom(meetingName,
                 selfLinkType == AVChatType.VIDEO.getValue(),
                 new MicHelper.ChannelCallback() {
                     @Override
                     public void onJoinChannelSuccess() {
-                        // 打开话筒
-                        AVChatManager.getInstance().setSpeaker(true);
                         // 释放拉流
                         releaseVideoPlayer();
 
@@ -1117,7 +1164,6 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
                 doCloseInteractionView(i);
             }
         }
-
         int index = 1;
         if (interactionGroupView[index].account != null) {
             index = 2;
@@ -1132,11 +1178,11 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
         if (DemoCache.getAccount().equals(account)) {
             return;
         }
+        LogUtil.i(TAG, "show other mic , index : " + index + ", accid : " + account + ", nick : " + nick + ", style : " + linkStyle);
 
         super.showOtherMicLinkedView(index, account, meetingUid, nick, linkStyle);
         InteractionView interactionView = interactionGroupView[index];
         interactionView.meetingUid = meetingUid;
-
         interactionView.account = account;
         interactionView.rootViewLayout.setVisibility(View.VISIBLE);
         interactionView.connectionViewCloseBtn.setVisibility(View.GONE);
@@ -1157,6 +1203,7 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
                 AVChatManager.getInstance().setupRemoteVideoRender(account, interactionView.bypassVideoRender, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
             } catch (Exception e) {
                 e.printStackTrace();
+                LogUtil.e(TAG, "setup remote err", e);
             }
 
         }
@@ -1200,12 +1247,16 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
 
     // 主动断开连麦
     @Override
-    protected void doCloseInteraction(int index) {
+    protected void doCloseInteraction(InteractionView interactionView) {
+        MicHelper.getInstance().audienceBrokeMic(selfLinkType == AVChatType.VIDEO.getValue(), liveType == LiveType.VIDEO_TYPE, meetingName);
+
         preparedText.setVisibility(View.VISIBLE);
-        MicHelper.getInstance().audienceBrokeMic(selfLinkType == AVChatType.VIDEO.getValue(),
-                liveType == LiveType.VIDEO_TYPE,
-                meetingName);
         mVideoCapturer = null;
+        if (pushType == PushType.ROOM_PUSH_TYPE) {
+            MicHelper.getInstance().sendBrokeMicMsg(roomId, DemoCache.getAccount());
+        }
+
+        closeAllMicView();
         switchVideoPlayer();
     }
 
@@ -1215,7 +1266,6 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
             doCloseInteractionView(i);
         }
         resetSelfConnectionView();
-
         joinedChannelAccountSet.clear();
         linkedInfoList.clear();
         fetchMicListWhenAudioAudience();
@@ -1234,9 +1284,8 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
         preparedText.setVisibility(View.VISIBLE);
         // 离开频道
         if (liveType != LiveType.NOT_ONLINE) {
-            MicHelper.getInstance().leaveChannel(selfLinkType == AVChatType.VIDEO.getValue(),
+            MicHelper.getInstance().leaveAndReleaseAVRoom(selfLinkType == AVChatType.VIDEO.getValue(),
                     liveType == LiveType.VIDEO_TYPE,
-                    true,
                     meetingName);
             mVideoCapturer = null;
             // 切换拉流
@@ -1259,6 +1308,22 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
             return;
         }
 
+    }
+
+    @Override
+    protected void userJoin(String account) {
+        super.userJoin(account);
+        if (roomInfo != null && TextUtils.equals(account, roomInfo.getCreator())) {
+            isMasterLeaved = false;
+        }
+    }
+
+    @Override
+    protected void userLeave(String account) {
+        super.userLeave(account);
+        if (roomInfo != null && TextUtils.equals(account, roomInfo.getCreator())) {
+            isMasterLeaved = true;
+        }
     }
 
     protected void resetSelfConnectionView() {
@@ -1290,19 +1355,20 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
     }
 
     private void switchVideoPlayer() {
-        if (videoPlayer == null && liveType != LiveType.NOT_ONLINE) {
-            initAudienceParam();
+        if (videoPlayer != null || liveType == LiveType.NOT_ONLINE) {
+            return;
         }
+        initAudienceParam();
     }
 
     @Override
     protected void onReceiveChatRoomInfoUpdate(Map<String, Object> extension) {
+        super.onReceiveChatRoomInfoUpdate(extension);
         if (extension == null) {
             return;
         }
-
-        if (extension.get(PushLinkConstant.type) != null) {
-            liveType = LiveType.typeOfValue((int) extension.get(PushLinkConstant.type));
+        if (extension.get(PushLinkConstant.LIVE_TYPE) != null) {
+            liveType = LiveType.typeOfValue((int) extension.get(PushLinkConstant.LIVE_TYPE));
             if (liveType == LiveType.NOT_ONLINE) {
                 pkInfoLayout.setVisibility(View.GONE);
                 isPk = false;
@@ -1317,14 +1383,14 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
     }
 
     protected void parseRoomPkInfo(Map<String, Object> extension) {
-        if (extension.get((PushLinkConstant.isPking)) == null) {
+        if (extension == null || extension.get((PushLinkConstant.IS_PKING)) == null) {
             return;
         }
 
-        isPk = (boolean) extension.get((PushLinkConstant.isPking));
+        isPk = (boolean) extension.get((PushLinkConstant.IS_PKING));
         switchNormalOrPKLayout();
-        String pkFrom = (String) extension.get((PushLinkConstant.pkInviter));
-        String pkTo = (String) extension.get((PushLinkConstant.pkInvitee));
+        String pkFrom = (String) extension.get((PushLinkConstant.PK_INVITER));
+        String pkTo = (String) extension.get((PushLinkConstant.PK_INVITEE));
         pkFromTv.setText(pkFrom);
         pkToTv.setText(pkTo);
     }
@@ -1336,10 +1402,7 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
         } else {
             // videoPlayer为null 则在连麦中。退出channel
             LogUtil.d(TAG, "leaveRoom, meetingName:" + meetingName);
-            MicHelper.getInstance().leaveChannel(selfLinkType == AVChatType.VIDEO.getValue(),
-                    liveType == LiveType.VIDEO_TYPE,
-                    true,
-                    meetingName);
+            MicHelper.getInstance().leaveAndReleaseAVRoom(selfLinkType == AVChatType.VIDEO.getValue(), liveType == LiveType.VIDEO_TYPE, meetingName);
             mVideoCapturer = null;
             videoPlayer = new VideoPlayer(AudienceActivity.this,
                     videoView,
@@ -1420,6 +1483,5 @@ public class AudienceActivity extends LivePlayerBaseActivity implements VideoPla
         findViews();
         initAudienceParam();
     }
-
 
 }

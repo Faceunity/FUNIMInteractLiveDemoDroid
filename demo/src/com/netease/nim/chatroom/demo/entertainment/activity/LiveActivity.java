@@ -4,14 +4,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
-import android.os.Looper;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
@@ -22,7 +26,6 @@ import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.TranslateAnimation;
-import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridView;
@@ -37,13 +40,15 @@ import android.widget.Toast;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.faceunity.nama.FURenderer;
-import com.faceunity.nama.ui.BeautyControlView;
+import com.faceunity.nama.ui.FaceUnityView;
+import com.faceunity.nama.utils.CameraUtils;
 import com.netease.nim.chatroom.demo.DemoCache;
 import com.netease.nim.chatroom.demo.R;
 import com.netease.nim.chatroom.demo.base.util.ScreenUtil;
 import com.netease.nim.chatroom.demo.base.util.StringUtil;
 import com.netease.nim.chatroom.demo.base.util.TimeUtil;
 import com.netease.nim.chatroom.demo.base.util.log.LogUtil;
+import com.netease.nim.chatroom.demo.custom.CameraRenderer;
 import com.netease.nim.chatroom.demo.entertainment.adapter.GiftAdapter;
 import com.netease.nim.chatroom.demo.entertainment.adapter.InteractionAdapter;
 import com.netease.nim.chatroom.demo.entertainment.constant.GiftConstant;
@@ -69,6 +74,8 @@ import com.netease.nim.chatroom.demo.permission.annotation.OnMPermissionDenied;
 import com.netease.nim.chatroom.demo.permission.annotation.OnMPermissionGranted;
 import com.netease.nim.chatroom.demo.permission.annotation.OnMPermissionNeverAskAgain;
 import com.netease.nim.chatroom.demo.permission.util.MPermissionUtil;
+import com.netease.nim.chatroom.demo.profile.CSVUtils;
+import com.netease.nim.chatroom.demo.profile.Constant;
 import com.netease.nim.chatroom.demo.utils.PreferenceUtil;
 import com.netease.nimlib.sdk.NIMClient;
 import com.netease.nimlib.sdk.Observer;
@@ -89,6 +96,7 @@ import com.netease.nimlib.sdk.avchat.constant.AVChatVideoCaptureOrientation;
 import com.netease.nimlib.sdk.avchat.constant.AVChatVideoCropRatio;
 import com.netease.nimlib.sdk.avchat.constant.AVChatVideoFrameRate;
 import com.netease.nimlib.sdk.avchat.constant.AVChatVideoQuality;
+import com.netease.nimlib.sdk.avchat.constant.AVChatVideoQualityStrategy;
 import com.netease.nimlib.sdk.avchat.constant.AVChatVideoScalingType;
 import com.netease.nimlib.sdk.avchat.model.AVChatChannelInfo;
 import com.netease.nimlib.sdk.avchat.model.AVChatLiveCompositingLayout;
@@ -100,22 +108,22 @@ import com.netease.nimlib.sdk.avchat.video.AVChatVideoCapturerFactory;
 import com.netease.nimlib.sdk.chatroom.ChatRoomService;
 import com.netease.nimlib.sdk.chatroom.model.ChatRoomMember;
 import com.netease.nimlib.sdk.chatroom.model.ChatRoomUpdateInfo;
-import com.netease.nimlib.sdk.chatroom.model.EnterChatRoomData;
 import com.netease.nimlib.sdk.msg.MsgServiceObserve;
 import com.netease.nimlib.sdk.msg.model.CustomNotification;
-import com.netease.nrtc.sdk.common.VideoFilterParameter;
-import com.netease.nrtc.sdk.video.VideoFrame;
-import com.netease.nrtc.video.coding.VideoFrameFormat;
+import com.netease.vcloud.video.effect.VideoEffect;
 
 import org.json.JSONException;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -124,7 +132,7 @@ import java.util.Map;
  * http://dev.netease.im/docs/product/互动直播/SDK开发集成/Android开发集成
  */
 
-public class LiveActivity extends LivePlayerBaseActivity implements InteractionAdapter.MemberLinkListener {
+public class LiveActivity extends LivePlayerBaseActivity implements InteractionAdapter.MemberLinkListener, SensorEventListener {
 
     private static final String TAG = "LiveActivity";
     private final int USER_JOIN_OVERTIME = 10 * 1000;
@@ -238,17 +246,19 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     private boolean isMusicSecondPlaying = false;
     private boolean isMusicSecondPause = false;
     private boolean isPermissionGrant = false;
-    private boolean isDestroyRtc = false;
+    private boolean isReleaseEngine = true;
     private boolean isBeautyBtnCancel = false;
+    private boolean isFilterTypeSet = false;
     private int networkQuality = -1;
 
 
-    //    private VideoEffect mVideoEffect;
+    private VideoEffect mVideoEffect;
     private int mCurWidth, mCurHeight;
-    //    private Bitmap mWaterMaskBitmapStatic;
-//    private Bitmap[] mWaterMaskBitmapDynamic;
-//    private volatile boolean isUnInitVideoEffect = false;// 是否销毁滤镜模块
-//    private volatile boolean mIsmWaterMaskAdded = false;
+    private Bitmap mWaterMaskBitmapStatic;
+    private Bitmap[] mWaterMaskBitmapDynamic;
+    private volatile boolean isUnInitVideoEffect = false;// 是否销毁滤镜模块
+    private volatile boolean mIsmWaterMaskAdded = false;
+    private int rotation;
     private int mDropFramesWhenConfigChanged = 0; //丢帧数
     private volatile boolean isNeedEffect = true;//是否需要滤镜
     private boolean isScreenHorizontal = false;//是否是横屏
@@ -272,10 +282,14 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     protected boolean isHasAudienceOnLink = false;
     // FU 美颜
     private FURenderer mFURenderer;
+    private TextView mTvFps;
     private boolean mIsFirstFrame = true;
     private boolean mIsFuBeautyOpen;
     private int mSkippedFrames;
     private int mCameraFacing = Camera.CameraInfo.CAMERA_FACING_FRONT;
+    private SensorManager mSensorManager;
+    private CSVUtils mCSVUtils;
+    private CameraRenderer mCameraRenderer;
 
     public static void start(Context context, boolean isVideo, boolean isCreator) {
         Intent intent = new Intent();
@@ -289,7 +303,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        mTvFps = findViewById(R.id.tv_fps);
         //目前伴音功能的音乐文件，nrtc的SDK只支持读取存储空间里面的音乐文件，不支持assets中的文件，所以这里将文件拷贝到存储空间里面
         if (Environment.getExternalStorageDirectory() != null) {
 
@@ -327,20 +341,6 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     }
 
     @Override
-    protected void setEnterRoomExtension(EnterChatRoomData enterChatRoomData) {
-        Map<String, Object> notifyExt = new HashMap<>();
-        if (liveType == LiveType.VIDEO_TYPE) {
-            notifyExt.put(PushLinkConstant.type, AVChatType.VIDEO.getValue());
-        } else if (liveType == LiveType.AUDIO_TYPE) {
-            notifyExt.put(PushLinkConstant.type, AVChatType.AUDIO.getValue());
-        }
-        notifyExt.put(PushLinkConstant.meetingName, meetingName);
-        boolean isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
-        notifyExt.put(PushLinkConstant.orientation, isPortrait ? 1 : 2);
-        enterChatRoomData.setNotifyExtension(notifyExt);
-    }
-
-    @Override
     protected int getActivityLayout() {
         return R.layout.live_player_activity;
     }
@@ -367,7 +367,6 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         super.onResume();
     }
 
-    @Override
     protected void onPause() {
         super.onPause();
     }
@@ -377,16 +376,23 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         if (isStartLive) {
             logoutChatRoom();
         } else {
-            releaseRtc(false);
+            leaveAndReleaseAVRoom();
             clearChatRoom();
         }
     }
 
     @Override
     protected void onDestroy() {
+        leaveAndReleaseAVRoom();
         giftList.clear();
         if (pkDialog != null && pkDialog.isShowing()) {
             pkDialog.dismiss();
+        }
+        if (mSensorManager != null) {
+            mSensorManager.unregisterListener(this);
+        }
+        if (mCameraRenderer != null) {
+            mCameraRenderer.stopCapture();
         }
         registerLiveObservers(false);
         super.onDestroy();
@@ -396,7 +402,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     // 退出聊天室
     private void logoutChatRoom() {
         if (startLayout.getVisibility() == View.VISIBLE) {
-            doCompletelyFinish();
+            closeLive();
         } else {
             EasyAlertDialogHelper.createOkCancelDiolag(this, null, getString(R.string.finish_confirm),
                     getString(R.string.confirm), getString(R.string.cancel), true,
@@ -408,34 +414,30 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
 
                         @Override
                         public void doOkAction() {
-                            doCompletelyFinish();
+                            closeLive();
                         }
                     }).show();
         }
     }
 
-    private void doCompletelyFinish() {
+    private void closeLive() {
         isStartLive = false;
-        doUpdateRoomInfo();
-        releaseRtc(true);
+        resetChatRoomLiveType();
+        leaveAndReleaseAVRoom();
         finish();
-
     }
 
     private void showLiveFinishLayout() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                liveFinishLayout.setVisibility(View.VISIBLE);
-                TextView masterNickText = findView(R.id.finish_master_name);
-                masterNickText.setText(TextUtils.isEmpty(masterNick) ? (roomInfo == null ? "" : roomInfo.getCreator()) : masterNick);
+        runOnUiThread(() -> {
+            liveFinishLayout.setVisibility(View.VISIBLE);
+            TextView masterNickText = findView(R.id.finish_master_name);
+            masterNickText.setText(TextUtils.isEmpty(masterNick) ? (roomInfo == null ? "" : roomInfo.getCreator()) : masterNick);
 
-            }
         });
     }
 
 
-    private void doUpdateRoomInfo() {
+    private void resetChatRoomLiveType() {
 
         if (pkStateEnum == PKStateEnum.ONLINE) {
             MicHelper.getInstance().sendCustomPKNotify(pkAccount, PushMicNotificationType.CANCEL_INTERACT.getValue(), null);
@@ -444,7 +446,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         }
         ChatRoomUpdateInfo chatRoomUpdateInfo = new ChatRoomUpdateInfo();
         Map<String, Object> map = new HashMap<>(1);
-        map.put(PushLinkConstant.type, -1);
+        map.put(PushLinkConstant.LIVE_TYPE, LiveType.NOT_ONLINE.getValue());
         chatRoomUpdateInfo.setExtension(map);
         NIMClient.getService(ChatRoomService.class)
                 .updateRoomInfo(roomId, chatRoomUpdateInfo, true, map)
@@ -458,37 +460,28 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     }
 
 
-    protected void joinChannel(String pushUrl, final boolean isVideoMode) {
-        if (isDestroyed || isDestroyRtc) {
+    private void joinLiveAVRoom() {
+        if (isDestroyed) {
             return;
         }
-        AVChatManager.getInstance().setParameter(AVChatParameters.KEY_SESSION_LIVE_URL, pushUrl);
-        MicHelper.getInstance().joinChannel(meetingName, liveType == LiveType.VIDEO_TYPE, new MicHelper.ChannelCallback() {
+        LogUtil.i(TAG, "start join av room ");
+        MicHelper.getInstance().joinAVRoom(meetingName, liveType == LiveType.VIDEO_TYPE, new MicHelper.ChannelCallback() {
             @Override
             public void onJoinChannelSuccess() {
-                ChatRoomUpdateInfo chatRoomUpdateInfo = new ChatRoomUpdateInfo();
-                Map<String, Object> ext = new HashMap<>();
-                ext.put("type", isVideoMode ? AVChatType.VIDEO.getValue() : AVChatType.AUDIO.getValue());
-                ext.put(PushLinkConstant.meetingName, meetingName);
-                ext.put(PushLinkConstant.meetingUid, AVChatManager.getInstance().getUidByAccount(DemoCache.getAccount()));
-                chatRoomUpdateInfo.setExtension(ext);
-                NIMClient.getService(ChatRoomService.class).updateRoomInfo(roomId, chatRoomUpdateInfo, true, ext);
-                if (liveType == LiveType.AUDIO_TYPE) {
-                    AVChatManager.getInstance().setSpeaker(true);
-                }
+                LogUtil.i(TAG, "join av room success");
                 MicHelper.getInstance().sendBrokeMicMsg(roomId, null);
                 dropQueue();
             }
 
             @Override
             public void onJoinChannelFailed() {
+                LogUtil.i(TAG, "join av room failed");
                 Toast.makeText(DemoCache.getContext(), "join channel failed", Toast.LENGTH_SHORT).show();
                 showLiveFinishLayout();
             }
         });
     }
 
-    @Override
     protected void findViews() {
         super.findViews();
         rootView = findView(R.id.live_layout);
@@ -560,13 +553,10 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         // 直播结束
         liveFinishLayout = findView(R.id.live_finish_layout);
         Button liveFinishBtn = findView(R.id.finish_btn);
-        liveFinishBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                NIMClient.getService(ChatRoomService.class).exitChatRoom(roomId);
-                releaseRtc(false);
-                clearChatRoom();
-            }
+        liveFinishBtn.setOnClickListener(v -> {
+            NIMClient.getService(ChatRoomService.class).exitChatRoom(roomId);
+            leaveAndReleaseAVRoom();
+            clearChatRoom();
         });
 
         // 初始化连线人员布局
@@ -612,26 +602,13 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         pkVideoBg = findView(R.id.no_video_bg);
         pkVideoCloseBtn = findView(R.id.pk_close_btn);
         pkVideoCloseConfirm = findView(R.id.pk_close_confirm_layout);
-        pkVideoCloseBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                switchPkVideoOrCloseDialog(false);
-            }
+        pkVideoCloseBtn.setOnClickListener(v -> switchPkVideoOrCloseDialog(false));
+        findView(R.id.pk_close_confirm).setOnClickListener(v -> {
+            switchPkVideoOrCloseDialog(true);
+            MicHelper.getInstance().sendCustomPKNotify(pkAccount, PushMicNotificationType.EXITED.getValue(), null);
+            leavePKAVRoom();
         });
-        findView(R.id.pk_close_confirm).setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                switchPkVideoOrCloseDialog(true);
-                MicHelper.getInstance().sendCustomPKNotify(pkAccount, PushMicNotificationType.EXITED.getValue(), null);
-                leavePKRoom();
-            }
-        });
-        findView(R.id.pk_close_cancel).setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                switchPkVideoOrCloseDialog(true);
-            }
-        });
+        findView(R.id.pk_close_cancel).setOnClickListener(v -> switchPkVideoOrCloseDialog(true));
 
     }
 
@@ -656,36 +633,33 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     private long pkDurationStart;
 
     private void switchNormalOrPKLayout(final boolean isPk) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (isPk) {
-                    RelativeLayout.LayoutParams videoDisplayParams = (RelativeLayout.LayoutParams) videoDisplayLayout.getLayoutParams();
-                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-                        videoDisplayParams.height = ScreenUtil.dip2px(300);
-                        videoDisplayParams.topMargin = ScreenUtil.dip2px(120);
-                    } else {
-                        videoDisplayParams.height = ScreenUtil.dip2px(200);
-                        videoDisplayParams.topMargin = ScreenUtil.dip2px(60);
-                    }
-
-                    videoDisplayLayout.setLayoutParams(videoDisplayParams);
-                    videoPkLayout.setVisibility(View.VISIBLE);
-                    videoPkDuration.setVisibility(View.VISIBLE);
-                    videoPkLivingLayout.setVisibility(View.VISIBLE);
-                    pkDurationStart = System.currentTimeMillis();
-                    getHandler().postDelayed(pkDuration, 1000);
+        runOnUiThread(() -> {
+            if (isPk) {
+                RelativeLayout.LayoutParams videoDisplayParams = (RelativeLayout.LayoutParams) videoDisplayLayout.getLayoutParams();
+                if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    videoDisplayParams.height = ScreenUtil.dip2px(300);
+                    videoDisplayParams.topMargin = ScreenUtil.dip2px(120);
                 } else {
-                    RelativeLayout.LayoutParams videoDisplayParams = (RelativeLayout.LayoutParams) videoDisplayLayout.getLayoutParams();
-                    videoDisplayParams.height = LinearLayout.LayoutParams.MATCH_PARENT;
-                    videoDisplayParams.topMargin = ScreenUtil.dip2px(0);
-                    videoDisplayLayout.setLayoutParams(videoDisplayParams);
-                    videoPkDuration.setVisibility(View.GONE);
-                    videoPkLayout.setVisibility(View.GONE);
-                    videoPkLivingLayout.setVisibility(View.GONE);
-                    switchPkVideoOrCloseDialog(true);
-                    getHandler().removeCallbacks(pkDuration);
+                    videoDisplayParams.height = ScreenUtil.dip2px(200);
+                    videoDisplayParams.topMargin = ScreenUtil.dip2px(60);
                 }
+
+                videoDisplayLayout.setLayoutParams(videoDisplayParams);
+                videoPkLayout.setVisibility(View.VISIBLE);
+                videoPkDuration.setVisibility(View.VISIBLE);
+                videoPkLivingLayout.setVisibility(View.VISIBLE);
+                pkDurationStart = System.currentTimeMillis();
+                getHandler().postDelayed(pkDuration, 1000);
+            } else {
+                RelativeLayout.LayoutParams videoDisplayParams = (RelativeLayout.LayoutParams) videoDisplayLayout.getLayoutParams();
+                videoDisplayParams.height = LinearLayout.LayoutParams.MATCH_PARENT;
+                videoDisplayParams.topMargin = ScreenUtil.dip2px(0);
+                videoDisplayLayout.setLayoutParams(videoDisplayParams);
+                videoPkDuration.setVisibility(View.GONE);
+                videoPkLayout.setVisibility(View.GONE);
+                videoPkLivingLayout.setVisibility(View.GONE);
+                switchPkVideoOrCloseDialog(true);
+                getHandler().removeCallbacks(pkDuration);
             }
         });
 
@@ -729,18 +703,8 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         videoMirrorBlankView.setOnClickListener(mirrorListener);
         videoMirrorCancelBtn.setOnClickListener(mirrorListener);
         videoMirrorConfirmBtn.setOnClickListener(mirrorListener);
-        videoMirrorLocalSb.setOnChangedListener(new SwitchButton.OnChangedListener() {
-            @Override
-            public void OnChanged(View v, boolean checkState) {
-                AVChatManager.getInstance().setParameter(AVChatParameters.KEY_VIDEO_LOCAL_PREVIEW_MIRROR, checkState);
-            }
-        });
-        videoMirrorPushSb.setOnChangedListener(new SwitchButton.OnChangedListener() {
-            @Override
-            public void OnChanged(View v, boolean checkState) {
-                AVChatManager.getInstance().setParameter(AVChatParameters.KEY_VIDEO_TRANSPORT_MIRROR, checkState);
-            }
-        });
+        videoMirrorLocalSb.setOnChangedListener((v, checkState) -> AVChatManager.getInstance().setParameter(AVChatParameters.KEY_VIDEO_LOCAL_PREVIEW_MIRROR, checkState));
+        videoMirrorPushSb.setOnChangedListener((v, checkState) -> AVChatManager.getInstance().setParameter(AVChatParameters.KEY_VIDEO_TRANSPORT_MIRROR, checkState));
     }
 
     private void findPKLayout() {
@@ -758,31 +722,28 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         getVideoPKWaitingTips = findView(R.id.video_pk_content_waiting_tips);
         videoPKConfirmLayout = findView(R.id.video_pk_confirm_layout);
         View videoPKConfirmOK = findView(R.id.video_pk_button_confirm);
-        videoPKConfirmOK.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                inputPanel.collapse(true);// 收起软键盘
+        videoPKConfirmOK.setOnClickListener(view -> {
+            inputPanel.collapse(true);// 收起软键盘
 
-                for (InteractionMember tmp : currentInteractionMembers) {
-                    if (tmp.getMicStateEnum() == MicStateEnum.CONNECTED) {
-                        showPKMessage("你当前在和观众互动，请先结束互动再发起PK邀请");
-                        return;
-                    }
+            for (InteractionMember tmp : currentInteractionMembers) {
+                if (tmp.getMicStateEnum() == MicStateEnum.CONNECTED) {
+                    showPKMessage("你当前在和观众互动，请先结束互动再发起PK邀请");
+                    return;
                 }
+            }
 
-                pkAccount = videoPKInviteAccount.getText().toString();
-                if (!TextUtils.isEmpty(pkAccount)) {
-                    if (pkAccount.equals(DemoCache.getAccount())) {
-                        showPKMessage("你不能与自己进行PK，请重新输入其他主播ID");
-                        return;
-                    }
-                    //先尝试
-                    pkStateEnum = PKStateEnum.WAITING;
-                    showPKWaitingLayout();
-                    getHandler().postDelayed(pkAccountTimeOutRunnable, USER_JOIN_OVERTIME); //10s检测在线超时
-                    //发送主播是否在线询问消息
-                    MicHelper.getInstance().sendCustomPKNotify(pkAccount, PushMicNotificationType.TRY_INVITE_ANCHOR.getValue(), null);
+            pkAccount = videoPKInviteAccount.getText().toString();
+            if (!TextUtils.isEmpty(pkAccount)) {
+                if (pkAccount.equals(DemoCache.getAccount())) {
+                    showPKMessage("你不能与自己进行PK，请重新输入其他主播ID");
+                    return;
                 }
+                //先尝试
+                pkStateEnum = PKStateEnum.WAITING;
+                showPKWaitingLayout();
+                getHandler().postDelayed(pkAccountTimeOutRunnable, USER_JOIN_OVERTIME); //10s检测在线超时
+                //发送主播是否在线询问消息
+                MicHelper.getInstance().sendCustomPKNotify(pkAccount, PushMicNotificationType.TRY_INVITE_ANCHOR.getValue(), null);
             }
         });
         View videoPKConfirmCancel = findView(R.id.video_pk_button_cancel);
@@ -799,15 +760,18 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
             String content = customNotification.getContent();
             try {
                 JSONObject json = JSON.parseObject(content);
-                int id = json.getIntValue(PushLinkConstant.command);
-                final String fromPKMeetingName = json.getString(PushLinkConstant.pkRoomName);
-                JSONObject info = json.getJSONObject(PushLinkConstant.info);
-                final String nickName = info.getString(PushLinkConstant.nick);
+                int id = json.getIntValue(PushLinkConstant.COMMAND);
+                final String fromPKMeetingName = json.getString(PushLinkConstant.PK_ROOM_NAME);
+                JSONObject info = json.getJSONObject(PushLinkConstant.INFO);
+                final String nickName = info.getString(PushLinkConstant.NICK);
                 final String account = customNotification.getFromAccount();
                 PushMicNotificationType type = PushMicNotificationType.typeOfValue(id);
                 switch (type) {
                     case TRY_INVITE_ANCHOR: //回复主播在线
                         MicHelper.getInstance().sendCustomPKNotify(account, PushMicNotificationType.REPLY_INVITATION.getValue(), null);
+                        break;
+                    case TRY_ROOM_PUSH_INVITE_ANCHOR:
+                        MicHelper.getInstance().sendCustomPKNotify(account, PushMicNotificationType.INVALID.getValue(), null);
                         break;
                     case REPLY_INVITATION: //收到主播在线，发送PK
                         pkStateEnum = PKStateEnum.ONLINE;
@@ -868,7 +832,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                         break;
                     case EXITED:
                         //收到离开PK消息
-                        leavePKRoom();
+                        leavePKAVRoom();
                         break;
                     default:
                         break;
@@ -881,13 +845,10 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     };
 
     // 等待PK主播是否在线超时处理
-    Runnable pkAccountTimeOutRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (pkStateEnum == PKStateEnum.WAITING) {
-                pkStateEnum = PKStateEnum.INVITE_TIME_OUT;
-                showPKMessage("邀请PK主播此刻不在线，请稍后邀请");
-            }
+    Runnable pkAccountTimeOutRunnable = () -> {
+        if (pkStateEnum == PKStateEnum.WAITING) {
+            pkStateEnum = PKStateEnum.INVITE_TIME_OUT;
+            showPKMessage("邀请PK主播此刻不在线，请稍后邀请");
         }
     };
 
@@ -941,12 +902,9 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     }
 
     private void hidePKFinishLayout() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                videoPKControlLayout.setVisibility(View.GONE);
-                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
-            }
+        runOnUiThread(() -> {
+            videoPKControlLayout.setVisibility(View.GONE);
+            getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
         });
     }
 
@@ -955,16 +913,16 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
      */
     private synchronized void inviteeJoinPKRoom(final String account, final String nickName) {
 
-        if (liveType == LiveType.VIDEO_TYPE) {
-            releaseVideoEffect();
-            AVChatManager.getInstance().stopVideoPreview();
-            AVChatManager.getInstance().disableVideo();
-        }
+        releaseEngine();
 
         AVChatManager.getInstance().leaveRoom2(meetingName, new AVChatCallback<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                createPKRoom(nickName, account);
+
+                if (isDestroyed) {
+                    return;
+                }
+                createPKAVRoom(nickName, account);
             }
 
             @Override
@@ -977,96 +935,97 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                 LogUtil.e(TAG, "leave channel exception, throwable:" + throwable.getMessage());
             }
         });
+
+
     }
 
     /**
      * 对方接受了自己的PK邀请
      */
     private synchronized void inviterJoinPKRoom(final String fromPKMeetingName, final String nickName) {
-        if (liveType == LiveType.VIDEO_TYPE) {
-            releaseVideoEffect();
-            AVChatManager.getInstance().stopVideoPreview();
-            AVChatManager.getInstance().disableVideo();
-        }
+
+        releaseEngine();
+
+        LogUtil.i(TAG, "inviter start pk , name :" + fromPKMeetingName);
         AVChatManager.getInstance().leaveRoom2(meetingName, new AVChatCallback<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                AVChatManager.getInstance().disableRtc();
-                //切换布局
-                switchNormalOrPKLayout(true);
-                hidePKFinishLayout();
-                initPkAVChat();
-                MicHelper.getInstance().joinChannel(fromPKMeetingName, liveType == LiveType.VIDEO_TYPE, new MicHelper.ChannelCallback() {
 
-                    @Override
-                    public void onJoinChannelSuccess() {
-                        Log.d(TAG, "onJoinChannelSuccess() called");
-                        if (liveType == LiveType.AUDIO_TYPE) {
-                            AVChatManager.getInstance().setSpeaker(true);
+                if (isDestroyed) {
+                    return;
+                }
+                // delay 一下，等待SDK 释放完成 ，要不然下一通可能无法正常启动，SDK 引擎 释放比较慢
+                uiHandler.postDelayed(() -> {
+
+                    if (isDestroyed) {
+                        return;
+                    }
+                    LogUtil.i(TAG, "inviter start pk , leave old av room success ");
+                    //切换布局
+                    switchNormalOrPKLayout(true);
+                    hidePKFinishLayout();
+                    startEngine(true);
+                    MicHelper.getInstance().joinAVRoom(fromPKMeetingName, liveType == LiveType.VIDEO_TYPE, new MicHelper.ChannelCallback() {
+
+                        @Override
+                        public void onJoinChannelSuccess() {
+                            LogUtil.i(TAG, "inviter join pk room success ");
+                            isUnInitVideoEffect = false;
+                            pkStateEnum = PKStateEnum.PKING;
+                            pkMeetingName = fromPKMeetingName;
+                            MicHelper.getInstance().sendUpdateRoomExtension(meetingUid, meetingName, liveType, true, masterNick, nickName, roomInfo, roomId);
                         }
-                        isNeedEffect = true;
-                        pkStateEnum = PKStateEnum.PKING;
-                        pkMeetingName = fromPKMeetingName;
 
-                        MicHelper.getInstance().sendUpdateRoomExtension(meetingUid, meetingName, liveType, true, masterNick, nickName, roomInfo, roomId);
-                    }
+                        @Override
+                        public void onJoinChannelFailed() {
+                            LogUtil.e(TAG, "inviter join pk room failed ");
+                            Toast.makeText(DemoCache.getContext(), "join channel failed", Toast.LENGTH_SHORT).show();
+                            showLiveFinishLayout();
+                        }
+                    });
+                }, RELEASE_SDK_DELAY_TIME);
 
-                    @Override
-                    public void onJoinChannelFailed() {
-                        Toast.makeText(DemoCache.getContext(), "join channel failed", Toast.LENGTH_SHORT).show();
-                        showLiveFinishLayout();
-                    }
-                });
             }
 
             @Override
             public void onFailed(int i) {
-                LogUtil.e(TAG, "leave channel failed, code:" + i);
+                LogUtil.e(TAG, "start pk , leave old av room failed , code :  " + i);
             }
 
             @Override
             public void onException(Throwable throwable) {
-                LogUtil.e(TAG, "leave channel exception, throwable:" + throwable.getMessage());
+                LogUtil.e(TAG, "start pk , leave old av room exception ", throwable);
             }
         });
     }
 
-    private void createPKRoom(final String nickName, final String account) {
 
-        AVChatManager.getInstance().disableRtc();
-        initPkAVChat();
+    private void createPKAVRoom(final String nickName, final String account) {
+
+        startEngine(true);
         pkMeetingName = StringUtil.get36UUID();
-
+        LogUtil.e(TAG, "create pk av room , name :" + pkMeetingName);
         AVChatManager.getInstance().createRoom(pkMeetingName, null, new AVChatCallback<AVChatChannelInfo>() {
             @Override
             public void onSuccess(AVChatChannelInfo avChatChannelInfo) {
+                if (isDestroyed) {
+                    return;
+                }
+
+                LogUtil.e(TAG, "create pk av room success ");
                 Toast.makeText(LiveActivity.this, "创建的房间名：" + pkMeetingName, Toast.LENGTH_SHORT).show();
                 //切换布局
                 switchNormalOrPKLayout(true);
                 hidePKFinishLayout();
-                MicHelper.getInstance().joinChannel(pkMeetingName, liveType == LiveType.VIDEO_TYPE, new MicHelper.ChannelCallback() {
-
-                    @Override
-                    public void onJoinChannelSuccess() {
-                        if (liveType == LiveType.AUDIO_TYPE) {
-                            AVChatManager.getInstance().setSpeaker(true);
-                        }
-//                        isUnInitVideoEffect = false;
-                        isNeedEffect = true;
-                        pkStateEnum = PKStateEnum.PKING;
-                        MicHelper.getInstance().sendUpdateRoomExtension(meetingUid, meetingName, liveType, true, masterNick, nickName, roomInfo, roomId);
-                        MicHelper.getInstance().sendCustomPKNotify(account, PushMicNotificationType.AGREE_INVITATION.getValue(), pkMeetingName);
-                    }
-
-                    @Override
-                    public void onJoinChannelFailed() {
-                        showLiveFinishLayout();
-                    }
-                });
+                joinPKAVRoom(nickName, account);
             }
 
             @Override
             public void onFailed(int i) {
+                if (isDestroyed) {
+                    return;
+                }
+
                 if (i == ResponseCode.RES_EEXIST) {
                     // 417表示该频道已经存在
                     LogUtil.e(TAG, "create room 417, enter room");
@@ -1080,6 +1039,9 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
 
             @Override
             public void onException(Throwable throwable) {
+                if (isDestroyed) {
+                    return;
+                }
                 isStartLiving = false;
                 startBtn.setText(R.string.live_start);
                 LogUtil.e(TAG, "create room onException, throwable:" + throwable.getMessage());
@@ -1089,186 +1051,145 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         });
     }
 
+    private void joinPKAVRoom(String nickName, String account) {
 
-    private void initPkAVChat() {
+        LogUtil.i(TAG, "start join pk av room ");
 
-        AVChatManager.getInstance().enableRtc();
-        AVChatManager.getInstance().setupVideoCapturer(mVideoCapturer);
-        AVChatParameters parameters = new AVChatParameters();
-        parameters.setInteger(AVChatParameters.KEY_SESSION_MULTI_MODE_USER_ROLE, AVChatUserRole.NORMAL);
-        parameters.setString(AVChatParameters.KEY_VIDEO_ENCODER_MODE, AVChatMediaCodecMode.MEDIA_CODEC_SOFTWARE);
-        parameters.setString(AVChatParameters.KEY_VIDEO_DECODER_MODE, AVChatMediaCodecMode.MEDIA_CODEC_AUTO);
-        parameters.setInteger(AVChatParameters.KEY_VIDEO_QUALITY, AVChatVideoQuality.QUALITY_480P);
-        parameters.setBoolean(AVChatParameters.KEY_AUDIO_REPORT_SPEAKER, true);
-        ;//开启声音强度汇报
-        //如果用到美颜功能，建议这里设为15帧
-        parameters.setInteger(AVChatParameters.KEY_VIDEO_FRAME_RATE, AVChatVideoFrameRate.FRAME_RATE_15);
-        //如果不用美颜功能，这里可以设为25帧
-        //parameters.setInteger(AVChatParameters.KEY_VIDEO_FRAME_RATE, AVChatVideoFrameRate.FRAME_RATE_25);
+        MicHelper.getInstance().joinAVRoom(pkMeetingName, liveType == LiveType.VIDEO_TYPE, new MicHelper.ChannelCallback() {
 
-        parameters.setBoolean(AVChatParameters.KEY_VIDEO_ROTATE_IN_RENDING, false);
-        int videoOrientation = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT ? AVChatVideoCaptureOrientation.ORIENTATION_PORTRAIT : AVChatVideoCaptureOrientation.ORIENTATION_LANDSCAPE_RIGHT;
-        parameters.setInteger(AVChatParameters.KEY_VIDEO_CAPTURE_ORIENTATION, videoOrientation);
-        parameters.setBoolean(AVChatParameters.KEY_VIDEO_FRAME_FILTER_NEW, true);
+            @Override
+            public void onJoinChannelSuccess() {
+                LogUtil.i(TAG, "join pk av room success ");
+                isUnInitVideoEffect = false;
+                pkStateEnum = PKStateEnum.PKING;
+                MicHelper.getInstance().sendUpdateRoomExtension(meetingUid, meetingName, liveType, true, masterNick, nickName, roomInfo, roomId);
+                MicHelper.getInstance().sendCustomPKNotify(account, PushMicNotificationType.AGREE_INVITATION.getValue(), pkMeetingName);
+            }
 
-        AVChatManager.getInstance().setParameters(parameters);
-
-        AVChatLiveCompositingLayout liveCompositingLayout = new AVChatLiveCompositingLayout(AVChatLiveCompositingLayout.Mode.LAYOUT_ENHANCE);
-        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-            liveCompositingLayout.setExtraInfo("{\"version\":0,\"set_host_as_main\":false,\"host_area\":{\"adaption\":0,\"position_x\":0,\"position_y\":2000,\"width_rate\":5000,\"height_rate\":5000},\"special_show_mode\":true,\"n_host_area_number\":1,\"main_width\":480,\"main_height\":640,\"background\":{\"rgb_r\":0,\"rgb_g\":0,\"rgb_b\":0},\"n_host_area_0\":{\"position_x\":5000,\"position_y\":2000,\"width_rate\":5000,\"height_rate\":5000,\"adaption\":1}}");
-        } else {
-            liveCompositingLayout.setExtraInfo("{\"version\":0,\"set_host_as_main\":false,\"host_area\":{\"adaption\":0,\"position_x\":0,\"position_y\":2500,\"width_rate\":5000,\"height_rate\":5000},\"special_show_mode\":true,\"n_host_area_number\":1,\"main_width\":640,\"main_height\":480,\"background\":{\"rgb_r\":0,\"rgb_g\":0,\"rgb_b\":0},\"n_host_area_0\":{\"position_x\":5000,\"position_y\":2500,\"width_rate\":5000,\"height_rate\":5000,\"adaption\":1}}");
-        }
-        AVChatManager.getInstance().setParameter(AVChatParameters.KEY_SESSION_LIVE_COMPOSITING_LAYOUT, liveCompositingLayout);
-        AVChatManager.getInstance().setParameter(AVChatParameters.KEY_VIDEO_FIXED_CROP_RATIO, AVChatVideoCropRatio.CROP_RATIO_4_3);
-        AVChatManager.getInstance().setParameter(AVChatParameters.KEY_SESSION_LIVE_MODE, true);
-        AVChatManager.getInstance().setParameter(AVChatParameters.KEY_SESSION_LIVE_URL, pushUrl);
-
-        if (liveType == LiveType.VIDEO_TYPE) {
-            AVChatManager.getInstance().enableVideo();
-            AVChatManager.getInstance().setupLocalVideoRender(null, false, 0);
-            AVChatManager.getInstance().setupLocalVideoRender(videoRender, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
-            AVChatManager.getInstance().startVideoPreview();
-        }
-        loadAudioEffect();
-
+            @Override
+            public void onJoinChannelFailed() {
+                LogUtil.e(TAG, "join pk av room failed ");
+                showLiveFinishLayout();
+            }
+        });
     }
 
-    private void initLiveAVChat() {
-        AVChatManager.getInstance().enableRtc();
-        AVChatManager.getInstance().setupVideoCapturer(mVideoCapturer);
-        AVChatParameters parameters = new AVChatParameters();
-        parameters.setBoolean(AVChatParameters.KEY_SESSION_LIVE_MODE, true);
-        parameters.setInteger(AVChatParameters.KEY_SESSION_MULTI_MODE_USER_ROLE, AVChatUserRole.NORMAL);
-        parameters.setString(AVChatParameters.KEY_VIDEO_ENCODER_MODE, AVChatMediaCodecMode.MEDIA_CODEC_SOFTWARE);
-        parameters.setString(AVChatParameters.KEY_VIDEO_DECODER_MODE, AVChatMediaCodecMode.MEDIA_CODEC_AUTO);
-        parameters.setInteger(AVChatParameters.KEY_VIDEO_QUALITY, AVChatVideoQuality.QUALITY_720P);
-        parameters.setBoolean(AVChatParameters.KEY_AUDIO_REPORT_SPEAKER, true);//开启声音强度汇报
-        //如果用到美颜功能，建议这里设为15帧
-        parameters.setInteger(AVChatParameters.KEY_VIDEO_FRAME_RATE, AVChatVideoFrameRate.FRAME_RATE_15);
-        //如果不用美颜功能，这里可以设为25帧
-        //parameters.setInteger(AVChatParameters.KEY_VIDEO_FRAME_RATE, AVChatVideoFrameRate.FRAME_RATE_25);
-        parameters.set(AVChatParameters.KEY_SESSION_LIVE_COMPOSITING_LAYOUT, new AVChatLiveCompositingLayout(AVChatLiveCompositingLayout.Mode.LAYOUT_FLOATING_RIGHT_VERTICAL));
-        parameters.setInteger(AVChatParameters.KEY_VIDEO_FIXED_CROP_RATIO, AVChatVideoCropRatio.CROP_RATIO_16_9);
-        parameters.setBoolean(AVChatParameters.KEY_VIDEO_ROTATE_IN_RENDING, false);
-        int videoOrientation = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT ? AVChatVideoCaptureOrientation.ORIENTATION_PORTRAIT : AVChatVideoCaptureOrientation.ORIENTATION_LANDSCAPE_RIGHT;
-        parameters.setInteger(AVChatParameters.KEY_VIDEO_CAPTURE_ORIENTATION, videoOrientation);
-        parameters.setBoolean(AVChatParameters.KEY_VIDEO_FRAME_FILTER_NEW, true);
-        parameters.setString(AVChatParameters.KEY_SESSION_LIVE_URL, pushUrl);
-        AVChatManager.getInstance().setParameters(parameters);
-
-        if (liveType == LiveType.VIDEO_TYPE) {
-            AVChatManager.getInstance().enableVideo();
-            AVChatManager.getInstance().setupLocalVideoRender(null, false, 0);
-            AVChatManager.getInstance().setupLocalVideoRender(videoRender, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
-            AVChatManager.getInstance().startVideoPreview();
-        }
-        loadAudioEffect();
-    }
-
-    private synchronized void leavePKRoom() {
+    private synchronized void leavePKAVRoom() {
         if (pkStateEnum == PKStateEnum.NONE) {
-            LogUtil.i(TAG, "leavePKRoom has already,pkMeetingName:" + pkMeetingName);
+            LogUtil.i(TAG, "already leave pk av room:" + pkMeetingName);
             return;
         }
         pkStateEnum = PKStateEnum.NONE;
-        if (liveType == LiveType.VIDEO_TYPE) {
-            releaseVideoEffect();
-            AVChatManager.getInstance().setupLocalVideoRender(null, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
-            AVChatManager.getInstance().stopVideoPreview();
-            AVChatManager.getInstance().disableVideo();
 
-        }
+        releaseEngine();
+        LogUtil.i(TAG, "start leave pk av room:" + pkMeetingName);
         AVChatManager.getInstance().leaveRoom2(pkMeetingName, new AVChatCallback<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                AVChatManager.getInstance().disableRtc();
-                MicHelper.getInstance().sendUpdateRoomExtension(meetingUid, meetingName, liveType, false, masterNick, pkAccount, roomInfo, roomId);
-                switchNormalOrPKLayout(false);
-                hidePKFinishLayout();
-                initLiveAVChat();
-                MicHelper.getInstance().joinChannel(meetingName, liveType == LiveType.VIDEO_TYPE, new MicHelper.ChannelCallback() {
+                if (isDestroyed) {
+                    return;
+                }
+                LogUtil.i(TAG, "leave pk av room success");
+
+                leavePKAVRoomSuccess();
+            }
+
+            @Override
+            public void onFailed(int i) {
+                LogUtil.e(TAG, "leave pk av room failed, code:" + i);
+            }
+
+            @Override
+            public void onException(Throwable throwable) {
+                LogUtil.e(TAG, "leave pk av room exception, throwable:" + throwable.getMessage());
+            }
+        });
+    }
+
+    private void leavePKAVRoomSuccess() {
+
+        MicHelper.getInstance().sendUpdateRoomExtension(meetingUid, meetingName, liveType, false, masterNick, pkAccount, roomInfo, roomId);
+        switchNormalOrPKLayout(false);
+        hidePKFinishLayout();
+        startEngine(false);
+
+        MicHelper.getInstance().joinAVRoom(meetingName, liveType == LiveType.VIDEO_TYPE, new MicHelper.ChannelCallback() {
+
+            @Override
+            public void onJoinChannelSuccess() {
+                isUnInitVideoEffect = false;
+            }
+
+            @Override
+            public void onJoinChannelFailed() {
+                if (isDestroyed) {
+                    return;
+                }
+                LogUtil.e(TAG, "leave pk av room but  join old live failed ");
+                reCreateLiveAVRoom();
+            }
+        });
+    }
+
+    private void reCreateLiveAVRoom() {
+        AVChatManager.getInstance().createRoom(meetingName, null, new AVChatCallback<AVChatChannelInfo>() {
+            @Override
+            public void onSuccess(AVChatChannelInfo avChatChannelInfo) {
+                if (isDestroyed) {
+                    return;
+                }
+                LogUtil.i(TAG, "leave pk av room , create av room success : " + meetingName);
+                MicHelper.getInstance().joinAVRoom(meetingName, liveType == LiveType.VIDEO_TYPE, new MicHelper.ChannelCallback() {
 
                     @Override
                     public void onJoinChannelSuccess() {
-                        if (liveType == LiveType.AUDIO_TYPE) {
-                            AVChatManager.getInstance().setSpeaker(true);
-                        }
-                        isNeedEffect = true;
+                        LogUtil.i(TAG, "leave pk av room , join av room success ");
+                        isUnInitVideoEffect = false;
                     }
 
                     @Override
                     public void onJoinChannelFailed() {
-                        LogUtil.e(TAG, "leavePKRoom onJoinChannelFailed");
-                        AVChatManager.getInstance().createRoom(meetingName, null, new AVChatCallback<AVChatChannelInfo>() {
-                            @Override
-                            public void onSuccess(AVChatChannelInfo avChatChannelInfo) {
-                                LogUtil.i(TAG, "leavePKRoom 创建的房间名：" + meetingName);
-                                MicHelper.getInstance().joinChannel(meetingName, liveType == LiveType.VIDEO_TYPE, new MicHelper.ChannelCallback() {
-
-                                    @Override
-                                    public void onJoinChannelSuccess() {
-                                        if (liveType == LiveType.AUDIO_TYPE) {
-                                            AVChatManager.getInstance().setSpeaker(true);
-                                        }
-                                        isNeedEffect = true;
-                                    }
-
-                                    @Override
-                                    public void onJoinChannelFailed() {
-                                        showLiveFinishLayout();
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onFailed(int i) {
-                                if (i == ResponseCode.RES_EEXIST) {
-                                    // 417表示该频道已经存在
-                                    LogUtil.e(TAG, "leavePKRoom create room 417, enter room");
-                                    Toast.makeText(LiveActivity.this, "创建的房间名：" + meetingName, Toast.LENGTH_SHORT).show();
-                                } else {
-                                    startBtn.setText(R.string.live_start);
-                                    showLiveFinishLayout();
-                                    LogUtil.e(TAG, "leavePKRoom create room failed, code:" + i);
-                                    Toast.makeText(LiveActivity.this, "create room failed, code:" + i, Toast.LENGTH_SHORT).show();
-                                }
-                            }
-
-                            @Override
-                            public void onException(Throwable throwable) {
-                                isStartLiving = false;
-                                startBtn.setText(R.string.live_start);
-                                showLiveFinishLayout();
-                                LogUtil.e(TAG, "leavePKRoom create room onException, throwable:" + throwable.getMessage());
-                                Toast.makeText(LiveActivity.this, "create room onException, throwable:" + throwable.getMessage(), Toast.LENGTH_SHORT).show();
-
-                            }
-                        });
-
-
+                        LogUtil.e(TAG, "leave pk av room , join av room failed ");
+                        showLiveFinishLayout();
                     }
                 });
             }
 
             @Override
             public void onFailed(int i) {
-                LogUtil.e(TAG, "leave channel failed, code:" + i);
+                if (isDestroyed) {
+                    return;
+                }
+                LogUtil.i(TAG, "leave pk av room , create av room failed , code  : " + i);
+
+                if (i == ResponseCode.RES_EEXIST) {
+                    // 417表示该频道已经存在
+                    LogUtil.e(TAG, "leavePKAVRoom create room 417, enter room");
+                    Toast.makeText(LiveActivity.this, "创建的房间名：" + meetingName, Toast.LENGTH_SHORT).show();
+                } else {
+                    startBtn.setText(R.string.live_start);
+                    showLiveFinishLayout();
+                    LogUtil.e(TAG, "leavePKAVRoom create room failed, code:" + i);
+                    Toast.makeText(LiveActivity.this, "create room failed, code:" + i, Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
             public void onException(Throwable throwable) {
-                LogUtil.e(TAG, "leave channel exception, throwable:" + throwable.getMessage());
+                if (isDestroyed) {
+                    return;
+                }
+                LogUtil.i(TAG, "leave pk av room , create av room exception  ", throwable);
+                isStartLiving = false;
+                startBtn.setText(R.string.live_start);
+                showLiveFinishLayout();
+                Toast.makeText(LiveActivity.this, "create room onException, throwable:" + throwable.getMessage(), Toast.LENGTH_SHORT).show();
+
             }
         });
     }
 
-    private OnClickListener pkBlankListener = new OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            hidePKFinishLayout();
-        }
-    };
+    private OnClickListener pkBlankListener = v -> hidePKFinishLayout();
 
 
     private OnClickListener pkCancelListener = new OnClickListener() {
@@ -1281,7 +1202,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                 pkStateEnum = PKStateEnum.NONE;
             } else if (pkStateEnum == PKStateEnum.PKING) { //正在PK，结束PK
                 MicHelper.getInstance().sendCustomPKNotify(pkAccount, PushMicNotificationType.EXITED.getValue(), null);
-                leavePKRoom();
+                leavePKAVRoom();
             }
             showPkInviteLayout();
             videoPKControlLayout.setVisibility(View.GONE);
@@ -1342,10 +1263,10 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-//                if (mVideoEffect == null) {
-//                    return;
-//                }
-//                mVideoEffect.setBeautyLevel(seekBar.getProgress() / 20);
+                if (mVideoEffect == null) {
+                    return;
+                }
+                mVideoEffect.setBeautyLevel(seekBar.getProgress() / 20);
             }
         });
         videoBeautyContrastStrengthControlSb.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -1361,27 +1282,36 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                /*
                 if (mVideoEffect == null) {
                     return;
                 }
                 mVideoEffect.setFilterLevel((float) seekBar.getProgress() / 100);
-                 */
             }
         });
 
-        BeautyControlView beautyControlView = (BeautyControlView) findView(R.id.fu_beauty_control);
+        FaceUnityView beautyControlView = findView(R.id.fu_beauty_control);
         if (mIsFuBeautyOpen) {
-            FURenderer.initFURenderer(this);
-            if (mFURenderer == null) {
-                mFURenderer = new FURenderer.Builder(this)
-                        .setCreateEGLContext(true)
-                        .setInputTextureType(FURenderer.INPUT_2D_TEXTURE)
-                        .setCameraType(mCameraFacing)
-                        .setInputImageOrientation(FURenderer.getCameraOrientation(mCameraFacing))
-                        .build();
-            }
-            beautyControlView.setOnFaceUnityControlListener(mFURenderer);
+            mCameraRenderer = new CameraRenderer(this, new FURenderer.OnDebugListener() {
+                @Override
+                public void onFpsChanged(double fps, double callTime) {
+                    final String FPS = String.format(Locale.getDefault(), "%.2f", fps);
+                    Log.e(TAG, "onFpsChanged: FPS " + FPS + " callTime " + String.format(Locale.getDefault(), "%.2f", callTime));
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mTvFps != null) {
+                                mTvFps.setText("FPS: " + FPS);
+                            }
+                        }
+                    });
+                }
+            });
+            mFURenderer = mCameraRenderer.getFURenderer();
+            beautyControlView.setModuleManager(mFURenderer);
+            mFURenderer.onDeviceOrientationChanged(90);
+            mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+            Sensor sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            mSensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
         } else {
             beautyControlView.setVisibility(View.GONE);
         }
@@ -1403,7 +1333,6 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     }
 
     // 初始化礼物布局
-    @Override
     protected void findGiftLayout() {
         super.findGiftLayout();
         adapter = new GiftAdapter(giftList, this);
@@ -1519,13 +1448,13 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
             switch (v.getId()) {
                 case R.id.video_mark_static_rl:
                     markMode = VIDEO_MARK_MODE_STATIC;
-                    AVChatManager.getInstance().setParameter(AVChatParameters.KEY_VIDEO_FRAME_FILTER_NEW, true);
+                    AVChatManager.getInstance().setParameter(AVChatParameters.KEY_VIDEO_FRAME_FILTER, true);
                     updateMarkLayout();
                     closeMarkLayout(true);
                     break;
                 case R.id.video_mark_dynamic_rl:
                     markMode = VIDEO_MARK_MODE_DYNAMIC;
-                    AVChatManager.getInstance().setParameter(AVChatParameters.KEY_VIDEO_FRAME_FILTER_NEW, true);
+                    AVChatManager.getInstance().setParameter(AVChatParameters.KEY_VIDEO_FRAME_FILTER, true);
                     updateMarkLayout();
                     closeMarkLayout(true);
                     break;
@@ -1535,8 +1464,6 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                     closeMarkLayout(true);
                     break;
                 case R.id.video_mark_button_cancel:
-                    closeMarkLayout(false);
-                    break;
                 case R.id.video_mark_blank_view:
                     closeMarkLayout(false);
                     break;
@@ -1783,36 +1710,34 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         currentInteractionMembers = new LinkedList<>();
         interactionAdapter = new InteractionAdapter(interactionDataSource, this, this);
         interactionGridView.setAdapter(interactionAdapter);
-        interactionGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                InteractionMember member = (InteractionMember) interactionAdapter.getItem(position);
-                member.setSelected(true);
+        interactionGridView.setOnItemClickListener((parent, view, position, id) -> {
+            InteractionMember member = (InteractionMember) interactionAdapter.getItem(position);
+            member.setSelected(true);
 
-                if (clickAccount != null && !clickAccount.equals(member.getAccount())) {
-                    for (InteractionMember m : interactionDataSource) {
-                        if (m.getAccount().equals(clickAccount)) {
-                            m.setSelected(false);
-                            break;
-                        }
+            if (clickAccount != null && !clickAccount.equals(member.getAccount())) {
+                for (InteractionMember m : interactionDataSource) {
+                    if (m.getAccount().equals(clickAccount)) {
+                        m.setSelected(false);
+                        break;
                     }
                 }
-
-                clickAccount = member.getAccount();
-                interactionAdapter.notifyDataSetChanged();
             }
+
+            clickAccount = member.getAccount();
+            interactionAdapter.notifyDataSetChanged();
         });
     }
 
     @Override
-    protected void updateUI() {
-        super.updateUI();
+    protected void enterChatRoomSuccess() {
+        super.enterChatRoomSuccess();
         startLayout.setVisibility(View.GONE);
         ChatRoomMember roomMember = ChatRoomMemberCache.getInstance().getChatRoomMember(roomId, roomInfo.getCreator());
         if (roomMember != null) {
             masterNick = roomMember.getNick();
         }
         masterNameText.setText(TextUtils.isEmpty(masterNick) ? roomInfo.getCreator() : masterNick);
+
     }
 
     // 主播进来清空队列
@@ -1882,15 +1807,16 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         @Override
         public void onDisconnectServer(int i) {
             Toast.makeText(LiveActivity.this, "与音视频服务器已断开连接，自动退出", Toast.LENGTH_SHORT).show();
-            releaseRtc(true);
+            leaveAndReleaseAVRoom();
             NIMClient.getService(ChatRoomService.class).exitChatRoom(roomId);
             clearChatRoom();
         }
 
         @Override
         public void onUserLeave(String s, int i) {
+            LogUtil.i(TAG, "onUserLeave , accid : " + s + ", code : " + i);
             if (pkStateEnum == PKStateEnum.PKING) {
-                leavePKRoom();
+                leavePKAVRoom();
                 return;
             }
             // 连麦者离开房间
@@ -1922,54 +1848,55 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                 Toast.makeText(LiveActivity.this, "加入频道失败，code:" + code, Toast.LENGTH_SHORT).show();
                 showLiveFinishLayout();
             }
+            AVChatManager.getInstance().setSpeaker(true);
         }
 
         @Override
-        public void onUserJoined(String s) {
+        public void onUserJoined(String account) {
             if (pkStateEnum == PKStateEnum.PKING) {
                 //pk模式
-                onPkUserJoined(s);
+                onPkUserJoined(account);
                 return;
             }
             // 1、主播显示旁路直播画面
             // 2、主播发送全局自定义消息告诉观众有人连麦拉
-            InteractionMember interactionMember = getByAccount(s);
+            InteractionMember interactionMember = getByAccount(account);
             if (interactionMember == null) {
-                LogUtil.e(TAG, "onUserJoined : " + s + " can not find in currentInteractionMembers");
+                LogUtil.e(TAG, "onUserJoined : " + account + " can not find in currentInteractionMembers");
                 return;
             }
             int emptyIndex = getEmptyInteractionView();
-            int preIndex = getInteractionViewIndexByAccount(s);
+            int preIndex = getInteractionViewIndexByAccount(account);
 
             if (emptyIndex == -1 || preIndex != -1) {
-                LogUtil.e(TAG, "onUserJoined : " + s + "can not find suitable index , empty = " + emptyIndex + " , pre = " + preIndex);
+                LogUtil.e(TAG, "onUserJoined : " + account + "can not find suitable index , empty = " + emptyIndex + " , pre = " + preIndex);
                 return;
             }
             interactionMember.setMicStateEnum(MicStateEnum.CONNECTED);
             getHandler().removeCallbacks(userJoinRunnable);
 
-            Long uid = AVChatManager.getInstance().getUidByAccount(s);
+            Long uid = AVChatManager.getInstance().getUidByAccount(account);
             if (uid != null) {
                 interactionMember.setMeetingUid(Long.toString(uid));
             }
 
             MicHelper.getInstance().sendConnectedMicMsg(roomId, interactionMember);
             MicHelper.getInstance().updateMemberInChatRoom(roomId, interactionMember);
-            removeMemberFromList(s);
+            removeMemberFromList(account);
 
             InteractionView interactionView = interactionGroupView[emptyIndex];
             if (interactionView.audienceLivingLayout.getVisibility() == View.VISIBLE && interactionMember.getAvChatType() == AVChatType.VIDEO) {
                 // 如果是已经有连麦的人，下一个连麦人上麦，不隐藏小窗口，直接切换画面
-                AVChatManager.getInstance().setupRemoteVideoRender(s, null, false, 0);
-                AVChatManager.getInstance().setupRemoteVideoRender(s, interactionView.bypassVideoRender, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
+                AVChatManager.getInstance().setupRemoteVideoRender(account, null, false, 0);
+                AVChatManager.getInstance().setupRemoteVideoRender(account, interactionView.bypassVideoRender, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
                 updateOnMicName(emptyIndex, interactionMember.getName());
                 interactionView.audienceLoadingLayout.setVisibility(View.GONE);
                 interactionView.livingBg.setVisibility(View.VISIBLE);
             } else {
-                String meetingUid = String.valueOf(AVChatManager.getInstance().getUidByAccount(s));
-                showOtherMicLinkedView(emptyIndex, s, meetingUid, interactionMember.getName(), interactionMember.getAvChatType().getValue());
+                String meetingUid = String.valueOf(AVChatManager.getInstance().getUidByAccount(account));
+                showOtherMicLinkedView(emptyIndex, account, meetingUid, interactionMember.getName(), interactionMember.getAvChatType().getValue());
             }
-            interactionView.account = s;
+            interactionView.account = account;
             interactionView.meetingUid = meetingUid;
         }
 
@@ -1994,74 +1921,10 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                 Toast.makeText(LiveActivity.this, R.string.shot_success, Toast.LENGTH_SHORT).show();
                 shotCover.setVisibility(View.VISIBLE);
                 shotCover.setAnimation(AnimationUtils.loadAnimation(LiveActivity.this, R.anim.shot_anim_finish));
-                shotCover.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        shotCover.setVisibility(View.GONE);
-                    }
-                }, 1000);
+                shotCover.postDelayed(() -> shotCover.setVisibility(View.GONE), 1000);
             } else {
                 Toast.makeText(LiveActivity.this, R.string.shot_failed, Toast.LENGTH_SHORT).show();
             }
-        }
-
-        private byte[] i420Byte;
-        private byte[] readbackByte;
-
-        /**
-         * 视频数据外部处理接口, 此接口需要同步执行. 操作运行在视频数据发送线程上,处理速度过慢会导致帧率过低
-         *
-         * @param input                待处理数据
-         * @param outputFrames         {@link com.netease.nrtc.sdk.video.VideoFrame[0]} 处理后的数据，{@link com.netease.nrtc.sdk.video.VideoFrame[1]} 处理后的镜像数据。
-         *                             在实际使用过程中，用户需要根据自己需求来决定是否真正需要输入镜像数据，一般在使用到水印等外部处理时才会需要真正输入两路数据，其他情况可以忽略此参数。
-         * @param videoFilterParameter 待处理数据的参数
-         * @return 返回true成功
-         */
-        @Override
-        public boolean onVideoFrameFilter(VideoFrame input, VideoFrame[] outputFrames, VideoFilterParameter videoFilterParameter) {
-            if (!isNeedEffect || !mIsFuBeautyOpen) {
-                return true;
-            }
-
-            VideoFrame.Buffer buffer = input.getBuffer();
-            int width = buffer.getWidth();
-            int height = buffer.getHeight();
-            int rotation = input.getRotation();
-            int format = buffer.getFormat();
-            if (mIsFirstFrame) {
-                mVideoEffectHandler = new Handler(Looper.myLooper());
-                mFURenderer.onSurfaceCreated();
-                int dataSize = width * height * 3 / 2;
-                i420Byte = new byte[dataSize];
-                readbackByte = new byte[dataSize];
-                mIsFirstFrame = false;
-            }
-
-            // I420 格式
-            if (format == VideoFrameFormat.kVideoI420) {
-                buffer.toBytes(i420Byte);
-                // FU 美颜滤镜
-                mFURenderer.onDrawFrameSingleInput(i420Byte, width, height, readbackByte, width, height, FURenderer.INPUT_FORMAT_I420);
-                if (mSkippedFrames > 0) {
-                    mSkippedFrames--;
-                    VideoFrame.Buffer rotatedBuffer = buffer.rotate(videoFilterParameter.frameRotation);
-                    VideoFrame outputFrame = new VideoFrame(rotatedBuffer, rotation, input.getTimestampMs());
-                    outputFrames[0] = outputFrame;
-                } else {
-                    // 数据回传
-                    try {
-                        VideoFrame.Buffer outputBuffer = VideoFrame.asBuffer(readbackByte, format, width, height);
-                        VideoFrame.Buffer rotatedBuffer = outputBuffer.rotate(videoFilterParameter.frameRotation);
-                        VideoFrame outputFrame = new VideoFrame(rotatedBuffer, rotation, input.getTimestampMs());
-                        outputFrames[0] = outputFrame;
-                        outputBuffer.release();
-                    } catch (IllegalAccessException e) {
-                        Log.e(TAG, "onVideoFrameFilter: ", e);
-                    }
-                }
-            }
-            input.release();
-            return true;
         }
 
         @Override
@@ -2091,13 +1954,6 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
             }
         }
 
-        @Override
-        public void onFirstVideoFrameAvailable(String s) {
-            if (pkStateEnum == PKStateEnum.PKING) {
-                //pk模式
-                onPkUserFirstVideoFrameAvailable(s);
-            }
-        }
 
         @Override
         public void onDeviceEvent(int event, String desc) {
@@ -2107,13 +1963,18 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                 mCameraFacing = mCameraFacing == Camera.CameraInfo.CAMERA_FACING_FRONT
                         ? Camera.CameraInfo.CAMERA_FACING_BACK : Camera.CameraInfo.CAMERA_FACING_FRONT;
                 if (mFURenderer != null) {
-                    mFURenderer.onCameraChanged(mCameraFacing, FURenderer.getCameraOrientation(mCameraFacing));
+                    mFURenderer.onCameraChanged(mCameraFacing, CameraUtils.getCameraOrientation(mCameraFacing));
+                    if (mFURenderer.getMakeupModule() != null) {
+                        mFURenderer.getMakeupModule().setIsMakeupFlipPoints(mCameraFacing == Camera.CameraInfo.CAMERA_FACING_FRONT
+                                ? 0 : 1);
+                    }
                 }
             }
         }
 
         @Override
         public void onFirstVideoFrameRendered(String s) {
+            LogUtil.i(TAG, "on first video render : accid : " + s + " , pk : " + pkStateEnum.getValue() + ", pk accid : " + pkAccount);
 
             if (pkStateEnum == PKStateEnum.PKING && TextUtils.equals(s, pkAccount)) {
                 pkVideoBg.setVisibility(View.GONE);
@@ -2220,46 +2081,34 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                     isStartLiving = true;
                     startBtn.setText(R.string.live_prepare);
                     startLiveSwitchLayout.setVisibility(View.GONE);
-                    createChannel();
+                    masterCreateChatRoom(liveType == LiveType.VIDEO_TYPE);
                     break;
                 case R.id.start_screen_btn:
                     startLiveSwitchLayout.setVisibility(startLiveSwitchLayout.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
                     if (startLiveSwitchLayout.getVisibility() == View.VISIBLE) {
                         updateLiveSwitchLayout(getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT);
                     }
-//                    mIsFirstFrame = true;
                     break;
                 case R.id.start_switch_btn:
-                    mVideoCapturer.switchCamera();
+//                    mVideoCapturer.switchCamera();
+                    mCameraRenderer.switchCamera();
                     break;
                 case R.id.start_beauty_btn:
-                    showBeautyLayout();
+//                    showBeautyLayout();
                     break;
                 case R.id.screen_switch_horizontal:
-                    if (!isScreenHorizontal) {
-                        isNeedEffect = false;
-                    }
                     updateLiveSwitchLayout(false);
-                    getHandler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            startLiveSwitchLayout.setVisibility(View.GONE);
-                            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-                        }
+                    getHandler().postDelayed(() -> {
+                        startLiveSwitchLayout.setVisibility(View.GONE);
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
                     }, 300);
 
                     break;
                 case R.id.screen_switch_vertical:
-                    if (isScreenHorizontal) {
-                        isNeedEffect = false;
-                    }
                     updateLiveSwitchLayout(true);
-                    getHandler().postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            startLiveSwitchLayout.setVisibility(View.GONE);
-                            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                        }
+                    getHandler().postDelayed(() -> {
+                        startLiveSwitchLayout.setVisibility(View.GONE);
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
                     }, 300);
                     break;
                 case R.id.live_screen_switch_cover:
@@ -2269,7 +2118,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                     if (isStartLive) {
                         logoutChatRoom();
                     } else {
-                        releaseRtc(false);
+                        leaveAndReleaseAVRoom();
                         clearChatRoom();
                     }
                     break;
@@ -2285,11 +2134,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                     }
                     break;
                 case R.id.beauty_btn:
-                    if (Build.VERSION.SDK_INT < 18) {
-                        Toast.makeText(LiveActivity.this, "需要4.3以上的Android版本才能使用该功能", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    showBeautyLayout();
+//                    showBeautyLayout();
                     break;
                 case R.id.interaction_btn:
                     showInteractionLayout();
@@ -2353,7 +2198,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         videoMarkStaticIv.setVisibility(markMode == VIDEO_MARK_MODE_STATIC ? View.VISIBLE : View.GONE);
         videoMarkDynamicIv.setVisibility(markMode == VIDEO_MARK_MODE_DYNAMIC ? View.VISIBLE : View.GONE);
         videoMarkCloseIv.setVisibility(markMode == VIDEO_MARK_MODE_CLOSE ? View.VISIBLE : View.GONE);
-//        mIsmWaterMaskAdded = false;
+        mIsmWaterMaskAdded = false;
     }
 
     private void openCloseFocalLength() {
@@ -2448,12 +2293,9 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
             }
         });
 
-        controlBtnMid.post(new Runnable() {
-            @Override
-            public void run() {
-                controlBtnMid.setVisibility(View.VISIBLE);
-                controlBtnMid.startAnimation(translateAnimationMid);
-            }
+        controlBtnMid.post(() -> {
+            controlBtnMid.setVisibility(View.VISIBLE);
+            controlBtnMid.startAnimation(translateAnimationMid);
         });
 
         if (controlBtnTop == null) {
@@ -2479,43 +2321,51 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
 
             }
         });
-        controlBtnTop.post(new Runnable() {
-            @Override
-            public void run() {
-                controlBtnTop.setVisibility(View.VISIBLE);
-                controlBtnTop.startAnimation(translateAnimationTop);
-            }
+        controlBtnTop.post(() -> {
+            controlBtnTop.setVisibility(View.VISIBLE);
+            controlBtnTop.startAnimation(translateAnimationTop);
         });
     }
 
-    private void masterEnterRoom(final boolean isVideoMode) {
-        Map<String, Object> ext = new HashMap<>();
-        ext.put("type", isVideoMode ? AVChatType.VIDEO.getValue() : AVChatType.AUDIO.getValue());
-        ext.put(PushLinkConstant.meetingName, meetingName);
+    private void masterCreateChatRoom(final boolean isVideoMode) {
+
+        meetingName = StringUtil.get36UUID();
+        Map<String, Object> ext = createChatRoomExt();
         JSONObject jsonObject = null;
         try {
             jsonObject = parseMap(ext);
         } catch (JSONException e) {
             e.printStackTrace();
         }
+
+        LogUtil.i(TAG, "master start create chat room : " + jsonObject);
         boolean isPortrait = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
-        ChatRoomHttpClient.getInstance().masterEnterRoom(DemoCache.getAccount(), jsonObject.toString(), isVideoMode, isPortrait,
+        ChatRoomHttpClient.getInstance().masterCreateRoom(DemoCache.getAccount(), jsonObject.toString(), isVideoMode, isPortrait,
                 new ChatRoomHttpClient.ChatRoomHttpCallback<ChatRoomHttpClient.EnterRoomParam>() {
                     @Override
                     public void onSuccess(ChatRoomHttpClient.EnterRoomParam enterRoomParam) {
+                        if (isDestroyed) {
+                            return;
+                        }
                         pullUrl = enterRoomParam.getPullUrl();
                         roomId = enterRoomParam.getRoomId();
                         pushUrl = enterRoomParam.getPushUrl();
                         findInputViews();
-                        joinChannel(pushUrl, isVideoMode);
-                        enterRoom();
                         videoFocalLengthSb.setMax(mVideoCapturer.getMaxZoom() > 6 ? 5 : mVideoCapturer.getMaxZoom() - 1);
                         mVideoCapturer.setZoom(videoFocalLengthSb.getProgress());
                         startLayout.setVisibility(View.GONE);
+                        AVChatManager.getInstance().setParameter(AVChatParameters.KEY_SESSION_LIVE_URL, pushUrl);
+
+                        LogUtil.i(TAG, "master create chat room success , pull :" + pullUrl + ", push :" + pushUrl);
+                        createLiveAVRoom();
                     }
 
                     @Override
                     public void onFailed(int code, String errorMsg) {
+                        if (isDestroyed) {
+                            return;
+                        }
+                        LogUtil.e(TAG, "master create chat room failed , code :" + code + ", msg :" + errorMsg);
                         isStartLiving = false;
                         startBtn.setText(R.string.live_start);
                         Toast.makeText(LiveActivity.this, "创建直播间失败，code:" + code + ", errorMsg:" + errorMsg, Toast.LENGTH_SHORT).show();
@@ -2523,38 +2373,54 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                 });
     }
 
-    private void createChannel() {
+    private void createLiveAVRoom() {
 
-        meetingName = StringUtil.get36UUID();
+        LogUtil.i(TAG, "master start create av room , meeting name : " + meetingName);
         // 这里用uuid，作为多人通话房间的名称
         AVChatManager.getInstance().createRoom(meetingName, null, new AVChatCallback<AVChatChannelInfo>() {
             @Override
             public void onSuccess(AVChatChannelInfo avChatChannelInfo) {
+
+                if (isDestroyed) {
+                    return;
+                }
+
+                LogUtil.i(TAG, "master  create av room  success");
                 Toast.makeText(LiveActivity.this, "创建的房间名：" + meetingName, Toast.LENGTH_SHORT).show();
+                joinLiveAVRoom();
+                enterChatRoom();
                 isStartLive = true;
-                masterEnterRoom(liveType == LiveType.VIDEO_TYPE);
             }
 
             @Override
             public void onFailed(int i) {
+                if (isDestroyed) {
+                    return;
+                }
+
                 if (i == ResponseCode.RES_EEXIST) {
                     // 417表示该频道已经存在
-                    LogUtil.e(TAG, "create room 417, enter room");
+                    LogUtil.e(TAG, "master  create av room 417, enter room");
                     Toast.makeText(LiveActivity.this, "创建的房间名：" + meetingName, Toast.LENGTH_SHORT).show();
+                    joinLiveAVRoom();
+                    enterChatRoom();
                     isStartLive = true;
                 } else {
                     isStartLiving = false;
                     startBtn.setText(R.string.live_start);
-                    LogUtil.e(TAG, "create room failed, code:" + i);
+                    LogUtil.e(TAG, "master  create av room  failed, code:" + i);
                     Toast.makeText(LiveActivity.this, "create room failed, code:" + i, Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onException(Throwable throwable) {
+                if (isDestroyed) {
+                    return;
+                }
+                LogUtil.e(TAG, "master  create av room , throwable:" + throwable.getMessage());
                 isStartLiving = false;
                 startBtn.setText(R.string.live_start);
-                LogUtil.e(TAG, "create room onException, throwable:" + throwable.getMessage());
                 Toast.makeText(LiveActivity.this, "create room onException, throwable:" + throwable.getMessage(), Toast.LENGTH_SHORT).show();
 
             }
@@ -2563,16 +2429,23 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
 
     //主播直播前预览
     private void startPreview() {
+        startEngine(false);
+    }
 
-        if (isStartLiving) {
+    private void startEngine(boolean isPk) {
+
+        if (!isReleaseEngine) {
+            LogUtil.e(TAG, "startEngine err , not released , is pk : " + isPk);
             return;
         }
 
+        isReleaseEngine = false;
         AVChatManager.getInstance().enableRtc();
         if (mVideoCapturer == null) {
-            mVideoCapturer = AVChatVideoCapturerFactory.createCameraCapturer(true);
-            AVChatManager.getInstance().setupVideoCapturer(mVideoCapturer);
+            mVideoCapturer = AVChatVideoCapturerFactory.createCamera2Capturer(true, false);
         }
+
+        AVChatManager.getInstance().setupVideoCapturer(mVideoCapturer);
         AVChatParameters parameters = new AVChatParameters();
         parameters.setBoolean(AVChatParameters.KEY_SESSION_LIVE_MODE, true);
         parameters.setInteger(AVChatParameters.KEY_SESSION_MULTI_MODE_USER_ROLE, AVChatUserRole.NORMAL);
@@ -2580,25 +2453,52 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         parameters.setString(AVChatParameters.KEY_VIDEO_DECODER_MODE, AVChatMediaCodecMode.MEDIA_CODEC_AUTO);
         parameters.setInteger(AVChatParameters.KEY_VIDEO_QUALITY, AVChatVideoQuality.QUALITY_720P);
         parameters.setBoolean(AVChatParameters.KEY_AUDIO_REPORT_SPEAKER, true);//开启声音强度汇报
-        //如果用到美颜功能，建议这里设为15帧
-        parameters.setInteger(AVChatParameters.KEY_VIDEO_FRAME_RATE, AVChatVideoFrameRate.FRAME_RATE_15);
-        //如果不用美颜功能，这里可以设为25帧
-        //parameters.setInteger(AVChatParameters.KEY_VIDEO_FRAME_RATE, AVChatVideoFrameRate.FRAME_RATE_25);
-        parameters.set(AVChatParameters.KEY_SESSION_LIVE_COMPOSITING_LAYOUT, new AVChatLiveCompositingLayout(AVChatLiveCompositingLayout.Mode.LAYOUT_FLOATING_RIGHT_VERTICAL));
+        parameters.setInteger(AVChatParameters.KEY_VIDEO_FRAME_RATE, AVChatVideoFrameRate.FRAME_RATE_25);
+
+        if (isPk) {
+            AVChatLiveCompositingLayout liveCompositingLayout = new AVChatLiveCompositingLayout(AVChatLiveCompositingLayout.Mode.LAYOUT_ENHANCE);
+            if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                liveCompositingLayout.setExtraInfo("{\"version\":0,\"set_host_as_main\":false,\"host_area\":{\"adaption\":0,\"position_x\":0,\"position_y\":2000,\"width_rate\":5000,\"height_rate\":5000},\"special_show_mode\":true,\"n_host_area_number\":1,\"main_width\":480,\"main_height\":640,\"background\":{\"rgb_r\":0,\"rgb_g\":0,\"rgb_b\":0},\"n_host_area_0\":{\"position_x\":5000,\"position_y\":2000,\"width_rate\":5000,\"height_rate\":5000,\"adaption\":1}}");
+            } else {
+                liveCompositingLayout.setExtraInfo("{\"version\":0,\"set_host_as_main\":false,\"host_area\":{\"adaption\":0,\"position_x\":0,\"position_y\":2500,\"width_rate\":5000,\"height_rate\":5000},\"special_show_mode\":true,\"n_host_area_number\":1,\"main_width\":640,\"main_height\":480,\"background\":{\"rgb_r\":0,\"rgb_g\":0,\"rgb_b\":0},\"n_host_area_0\":{\"position_x\":5000,\"position_y\":2500,\"width_rate\":5000,\"height_rate\":5000,\"adaption\":1}}");
+            }
+            AVChatManager.getInstance().setParameter(AVChatParameters.KEY_SESSION_LIVE_COMPOSITING_LAYOUT, liveCompositingLayout);
+        } else {
+            parameters.set(AVChatParameters.KEY_SESSION_LIVE_COMPOSITING_LAYOUT, new AVChatLiveCompositingLayout(AVChatLiveCompositingLayout.Mode.LAYOUT_FLOATING_RIGHT_VERTICAL));
+        }
+
+        if (pushUrl != null) {
+            AVChatManager.getInstance().setParameter(AVChatParameters.KEY_SESSION_LIVE_URL, pushUrl);
+        }
+
         parameters.setInteger(AVChatParameters.KEY_VIDEO_FIXED_CROP_RATIO, AVChatVideoCropRatio.CROP_RATIO_16_9);
         parameters.setBoolean(AVChatParameters.KEY_VIDEO_ROTATE_IN_RENDING, false);
         int videoOrientation = getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT ? AVChatVideoCaptureOrientation.ORIENTATION_PORTRAIT : AVChatVideoCaptureOrientation.ORIENTATION_LANDSCAPE_RIGHT;
         parameters.setInteger(AVChatParameters.KEY_VIDEO_CAPTURE_ORIENTATION, videoOrientation);
-        parameters.setBoolean(AVChatParameters.KEY_VIDEO_FRAME_FILTER_NEW, true);
+        parameters.setBoolean(AVChatParameters.KEY_VIDEO_FRAME_FILTER_NEW, false);
         AVChatManager.getInstance().setParameters(parameters);
+        AVChatManager.getInstance().setVideoQualityStrategy(AVChatVideoQualityStrategy.ScreenSharing);
+
         if (liveType == LiveType.VIDEO_TYPE) {
             AVChatManager.getInstance().enableVideo();
             AVChatManager.getInstance().setupLocalVideoRender(null, false, 0);
             AVChatManager.getInstance().setupLocalVideoRender(videoRender, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
+            AVChatManager.getInstance().setupVideoCapturer(mCameraRenderer);
             AVChatManager.getInstance().startVideoPreview();
         }
         loadAudioEffect();
     }
+
+    private void releaseEngine() {
+        if (liveType == LiveType.VIDEO_TYPE) {
+            releaseVideoEffect();
+            AVChatManager.getInstance().stopVideoPreview();
+            AVChatManager.getInstance().disableVideo();
+        }
+        AVChatManager.getInstance().disableRtc();
+        isReleaseEngine = true;
+    }
+
 
     private JSONObject parseMap(Map map) throws JSONException {
         if (map == null) {
@@ -2620,11 +2520,9 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         if (!isPortrait) {
             screenSwitchHorizontal.setSelected(true);
             screenSwitchVertical.setSelected(false);
-            isScreenHorizontal = true;
         } else {
             screenSwitchHorizontal.setSelected(false);
             screenSwitchVertical.setSelected(true);
-            isScreenHorizontal = false;
         }
     }
 
@@ -2648,7 +2546,6 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         }
     }
 
-    @Override
     protected void updateGiftList(GiftType type) {
         if (!updateGiftCount(type)) {
             giftList.add(new Gift(type, GiftConstant.titles[type.getValue()], 1, GiftConstant.images[type.getValue()]));
@@ -2672,55 +2569,34 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         backgroundMusicLayout.setVisibility(View.VISIBLE);
     }
 
-    private void releaseRtc(boolean isLeaveRoom) {
-
+    private void leaveAndReleaseAVRoom() {
+        if (isReleaseEngine) {
+            return;
+        }
         releaseVideoEffect();
-        isDestroyRtc = true;
         String meetName = meetingName;
         if (pkStateEnum == PKStateEnum.PKING) {
             meetName = pkMeetingName;
             MicHelper.getInstance().sendCustomPKNotify(pkAccount, PushMicNotificationType.EXITED.getValue(), null);
             pkStateEnum = PKStateEnum.NONE;
         }
-        MicHelper.getInstance().leaveChannel(liveType == LiveType.VIDEO_TYPE, liveType == LiveType.VIDEO_TYPE, isLeaveRoom, meetName);
+        MicHelper.getInstance().leaveAndReleaseAVRoom(liveType == LiveType.VIDEO_TYPE, liveType == LiveType.VIDEO_TYPE, meetName);
+        isReleaseEngine = true;
     }
 
     private void releaseVideoEffect() {
-        Log.d(TAG, "releaseVideoEffect() called");
+
         if (liveType != LiveType.VIDEO_TYPE) {
             return;
         }
         // 释放资源
-        isNeedEffect = false;
-        if (mVideoEffectHandler != null) {
-            mVideoEffectHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (mFURenderer != null) {
-                        mFURenderer.onSurfaceDestroyed();
-                        mFURenderer = null;
-                    }
-                }
-            });
-        }
-
-        /*
         isUnInitVideoEffect = true;
-        mVideoEffectHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                mVideoEffect.unInit();
-                mVideoEffect = null;
-            }
-        });
-         */
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-//        isUnInitVideoEffect = false;
-        isNeedEffect = true;
+        isUnInitVideoEffect = false;
         findViews();
         updateRoomUI(true);
         loadGift();
@@ -2735,8 +2611,6 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
             AVChatManager.getInstance().setParameters(parameters);
             AVChatManager.getInstance().setupLocalVideoRender(null, false, 0);
             AVChatManager.getInstance().setupLocalVideoRender(videoRender, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
-
-            isNeedEffect = true;
         }
         if (AVChatManager.getInstance().checkPermission(this).size() != 0 &&
                 getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -2746,7 +2620,6 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
 
 
     // 网络连接成功
-    @Override
     protected void onConnected() {
         if (!disconnected) {
             return;
@@ -2757,7 +2630,6 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     }
 
     // 网络断开
-    @Override
     protected void onDisconnected() {
         disconnected = true;
         changeNetWorkTip(false);
@@ -2846,10 +2718,10 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         // 已经在连麦队列中，修改连麦申请的模式
         for (InteractionMember dataSource : interactionDataSource) {
             if (dataSource.getAccount().equals(customNotification.getFromAccount())) {
-                if (!json.containsKey(PushLinkConstant.style)) {
+                if (!json.containsKey(PushLinkConstant.LINK_STYLE)) {
                     return;
                 }
-                dataSource.setAvChatType(AVChatType.typeOfValue(json.getIntValue(PushLinkConstant.style)));
+                dataSource.setAvChatType(AVChatType.typeOfValue(json.getIntValue(PushLinkConstant.LINK_STYLE)));
                 interactionAdapter.notifyDataSetChanged();
                 return;
             }
@@ -2861,9 +2733,9 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
 
     // 主播保存互动观众
     private void saveToLocalInteractionList(String account, JSONObject jsonObject) {
-        JSONObject info = (JSONObject) jsonObject.get(PushLinkConstant.info);
-        String nick = info.getString(PushLinkConstant.nick);
-        AVChatType style = AVChatType.typeOfValue(jsonObject.getIntValue(PushLinkConstant.style));
+        JSONObject info = (JSONObject) jsonObject.get(PushLinkConstant.INFO);
+        String nick = info.getString(PushLinkConstant.NICK);
+        AVChatType style = AVChatType.typeOfValue(jsonObject.getIntValue(PushLinkConstant.LINK_STYLE));
         if (!TextUtils.isEmpty(account)) {
             String meetingUid = String.valueOf(AVChatManager.getInstance().getUidByAccount(account));
             interactionDataSource.add(new InteractionMember(account, meetingUid, nick, AVATAR_DEFAULT, style));
@@ -3010,15 +2882,30 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
 
     // 断开连麦
     @Override
-    protected void doCloseInteraction(int index) {
+    protected void doCloseInteraction(InteractionView interactionView) {
 
-        if (index >= currentInteractionMembers.size()) {
+        if (interactionView == null || interactionView.account == null) {
+            LogUtil.e(TAG, "do close interaction , err ");
             return;
         }
-        InteractionMember interactionMember = currentInteractionMembers.get(index);
+        InteractionMember interactionMember = null;
+        for (InteractionMember member : currentInteractionMembers) {
+            if (TextUtils.equals(interactionView.account, member.getAccount())) {
+                interactionMember = member;
+                break;
+            }
+        }
+        if (interactionMember == null) {
+            LogUtil.e(TAG, "do close interaction , but not find member , accid : " + interactionView.account);
+            return;
+        }
+
         if (interactionMember.getMicStateEnum() == MicStateEnum.CONNECTED) {
             MicHelper.getInstance().masterBrokeMic(roomId, interactionMember.getAccount());
         } else if (interactionMember.getMicStateEnum() == MicStateEnum.CONNECTING) {
+
+            LogUtil.i(TAG, "do close interaction ,but connecting , accid : " + interactionMember.getAccount());
+
             // 正在连麦中被关闭了,从显示队列中删除，并刷新数字
             for (InteractionMember member : interactionDataSource) {
                 if (member.getAccount().equals(interactionMember.getAccount())) {
@@ -3031,8 +2918,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
             }
         }
         interactionMember.setMicStateEnum(MicStateEnum.LEAVING);
-        currentInteractionMembers.remove(index);
-
+        currentInteractionMembers.remove(interactionMember);
         isHasAudienceOnLink = currentInteractionMembers.size() > 0;
     }
 
@@ -3065,15 +2951,9 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     private void onPkUserJoined(String user) {
         pkAccount = user;
         AVChatManager.getInstance().setupRemoteVideoRender(user, null, false, 0);
+        AVChatManager.getInstance().setupRemoteVideoRender(user, pkVideoRender, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
 
     }
-
-    private void onPkUserFirstVideoFrameAvailable(String account) {
-        if (account.equals(pkAccount)) {
-            AVChatManager.getInstance().setupRemoteVideoRender(pkAccount, pkVideoRender, false, AVChatVideoScalingType.SCALE_ASPECT_BALANCED);
-        }
-    }
-
 
     protected synchronized void notifyCapturerConfigChange() {
         mDropFramesWhenConfigChanged = 2;
@@ -3088,5 +2968,37 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         AVChatManager.getInstance().preloadAudioEffect(2, audioPathSecond);
     }
 
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        float x = event.values[0];
+        float y = event.values[1];
+        if (mFURenderer != null && (Math.abs(x) > 3 || Math.abs(y) > 3)) {
+            if (Math.abs(x) > Math.abs(y)) {
+                mFURenderer.onDeviceOrientationChanged(x > 0 ? 0 : 180);
+            } else {
+                mFURenderer.onDeviceOrientationChanged(y > 0 ? 90 : 270);
+            }
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+
+    private void initCsvUtil(Context context) {
+        mCSVUtils = new CSVUtils(context);
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault());
+        String dateStrDir = format.format(new Date(System.currentTimeMillis()));
+        dateStrDir = dateStrDir.replaceAll("-", "").replaceAll("_", "");
+        SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmssSSS", Locale.getDefault());
+        String dateStrFile = df.format(new Date());
+        String filePath = Constant.filePath + dateStrDir + File.separator + "excel-" + dateStrFile + ".csv";
+        Log.d(TAG, "initLog: CSV file path:" + filePath);
+        StringBuilder headerInfo = new StringBuilder();
+        headerInfo.append("version：").append(FURenderer.getVersion()).append(CSVUtils.COMMA)
+                .append("机型：").append(Build.MANUFACTURER).append(Build.MODEL)
+                .append("处理方式：Texture").append(CSVUtils.COMMA);
+        mCSVUtils.initHeader(filePath, headerInfo);
+    }
 
 }

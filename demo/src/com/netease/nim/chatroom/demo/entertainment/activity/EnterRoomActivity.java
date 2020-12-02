@@ -7,10 +7,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.netease.nim.chatroom.demo.DemoCache;
 import com.netease.nim.chatroom.demo.R;
 import com.netease.nim.chatroom.demo.base.ui.TActivity;
-import com.netease.nim.chatroom.demo.entertainment.http.ChatRoomHttpClient;
 import com.netease.nim.chatroom.demo.im.business.LogoutHelper;
 import com.netease.nim.chatroom.demo.im.ui.widget.ClearableEditTextWithIcon;
 import com.netease.nimlib.sdk.NIMClient;

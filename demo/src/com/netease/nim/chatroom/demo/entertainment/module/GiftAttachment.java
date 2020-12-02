@@ -15,7 +15,7 @@ public class GiftAttachment extends CustomAttachment {
     private int count;
 
     GiftAttachment() {
-        super(CustomAttachmentType.gift);
+        super(CustomAttachmentType.GIFT);
     }
 
     public GiftAttachment(GiftType giftType, int count) {

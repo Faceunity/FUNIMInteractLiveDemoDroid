@@ -23,6 +23,7 @@
     <string name="net_broken">当前网络不可用</string>
     <string name="leave">离开</string>
     <string name="chatroom_status_exception">聊天室连接状态异常</string>
+    <string name="cannot_switch_layout">同一房间，不允许切换横竖屏</string>
 
     <!-- 登录/注册 -->
     <string name="login_hint_account">请输入帐号</string>
