@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.netease.nim.chatroom.demo">
 
     <!-- 聊天室权限声明 -->
@@ -50,15 +51,13 @@
 
         <meta-data
             android:name="com.netease.nim.appKey"
-            android:value="6f49e3f759ccd47810b445444eebc090" />
+			android:value="6f49e3f759ccd47810b445444eebc090" />
 
         <uses-library
             android:name="com.google.android.maps"
             android:required="false" />
 
-        <uses-library
-            android:name="org.apache.http.legacy"
-            android:required="false" />
+        <uses-library android:name="org.apache.http.legacy" android:required="false" />
 
         <activity
             android:name=".NeedFaceUnityAcct"
@@ -109,6 +108,26 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
+            android:name=".entertainment.activity.PushTypeChooseActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
+            android:name=".entertainment.activity.LiveActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="stateHidden|adjustNothing" />
+
+
+        <activity
+            android:name=".entertainment.activity.RoomLiveActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="stateHidden|adjustNothing" />
+
+        <activity
             android:name=".entertainment.activity.AboutActivity"
             android:theme="@style/AppTheme.NoActionBar" />
 
@@ -120,19 +139,11 @@
             android:windowSoftInputMode="stateHidden|adjustNothing" />
 
         <activity
-            android:name=".entertainment.activity.LiveActivity"
-            android:screenOrientation="portrait"
-            android:configChanges="keyboardHidden|orientation|screenSize"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:windowSoftInputMode="stateHidden|adjustNothing" />
-
-        <activity
             android:name=".entertainment.activity.EnterRoomActivity"
             android:theme="@style/AppTheme.NoActionBar"
             android:windowSoftInputMode="stateHidden|adjustResize" />
 
-        <activity
-            android:name=".entertainment.activity.InputActivity"
+        <activity android:name=".entertainment.activity.InputActivity"
             android:theme="@style/InputActivityTheme"
             android:windowSoftInputMode="stateUnspecified|adjustResize" />
 

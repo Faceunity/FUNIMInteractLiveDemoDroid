@@ -9,7 +9,7 @@ import com.alibaba.fastjson.JSONObject;
 public class ConnectedAttachment extends CustomAttachment {
 
     private final String KEY_UID = "uid";
-    private final String KEY_MEETINGUID = "meetingUid";
+    private final String KEY_MEETINGU_ID = "meetingUid";
     private final String KEY_NICK = "nick";
     private final String KEY_AVATAR = "AVATAR";
     private final String KEY_STYLE = "style";
@@ -21,7 +21,7 @@ public class ConnectedAttachment extends CustomAttachment {
     private int style;
 
     ConnectedAttachment() {
-        super(CustomAttachmentType.connectedMic);
+        super(CustomAttachmentType.CONNECTED_MIC);
     }
 
     public ConnectedAttachment(String account, String meetingUid, String nick, String avatar, int style) {
@@ -36,7 +36,7 @@ public class ConnectedAttachment extends CustomAttachment {
     @Override
     protected void parseData(JSONObject data) {
         this.account = data.getString(KEY_UID);
-        this.meetingUid = data.getString(KEY_MEETINGUID);
+        this.meetingUid = data.getString(KEY_MEETINGU_ID);
         this.nick = data.getString(KEY_NICK);
         this.avatar = data.getString(KEY_AVATAR);
         this.style = data.getIntValue(KEY_STYLE);
@@ -47,7 +47,7 @@ public class ConnectedAttachment extends CustomAttachment {
         JSONObject data = new JSONObject();
         data.put(KEY_UID, account);
         data.put(KEY_NICK, nick);
-        data.put(KEY_MEETINGUID, meetingUid);
+        data.put(KEY_MEETINGU_ID, meetingUid);
         data.put(KEY_AVATAR, avatar);
         data.put(KEY_STYLE, style);
         return data;

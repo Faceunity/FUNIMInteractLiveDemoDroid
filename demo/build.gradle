@@ -16,12 +16,17 @@ android {
 
     defaultConfig {
         applicationId "com.netease.nim.entertainment.demo"
-        minSdkVersion 18
+        minSdkVersion 19
         targetSdkVersion 28
         versionCode rootProject.ext.versionCode
         versionName rootProject.ext.versionName
         buildConfigField "String", "GIT_REVISION", "\"${getGitVersion()}\""
         buildConfigField "String", "BUILD_DATE", "\"${new Date().toLocaleString()}\"";
+        multiDexEnabled true
+
+        ndk {
+            abiFilters 'armeabi-v7a'
+        }
     }
 
     signingConfigs {
@@ -88,16 +93,10 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:appcompat-v7:28.0.0'
     implementation 'com.android.support:design:28.0.0'
-    // 基础功能 (必需)
-    implementation 'com.netease.nimlib:basesdk:6.10.0'
-    // 音视频和互动白板服务需要
-    implementation 'com.netease.nimlib:nrtc:6.10.0'
-    // 音视频需要
-    implementation 'com.netease.nimlib:avchat:6.10.0'
-    // 聊天室需要
-    implementation 'com.netease.nimlib:chatroom:6.10.0'
     implementation 'com.alibaba:fastjson:1.2.62'
     implementation 'com.jakewharton:butterknife:8.4.0'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.4.0'
+    implementation 'com.android.support:multidex:1.0.3'
+    implementation 'com.netease.nrtc:videoeffect:1.0.3.1080P'
     implementation project(path: ':faceunity')
 }

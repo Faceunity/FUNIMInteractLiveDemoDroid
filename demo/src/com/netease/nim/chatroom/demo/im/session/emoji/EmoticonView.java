@@ -3,7 +3,6 @@ package com.netease.nim.chatroom.demo.im.session.emoji;
 import android.content.Context;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.View;
@@ -60,7 +59,7 @@ public class EmoticonView {
         this.pageNumberLayout = pageNumberLayout;
         this.emotPager = mCurPage;
 
-        emotPager.setOnPageChangeListener(new OnPageChangeListener() {
+        emotPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
 
             @Override
             public void onPageSelected(int position) {

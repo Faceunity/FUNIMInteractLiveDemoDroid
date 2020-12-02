@@ -25,7 +25,7 @@ public enum PushMicNotificationType {
      */
     REJECT_CONNECTING(5),
     /**
-     * 尝试发起PK邀请(无法判断对方是否在线，因此先尝试发送邀请，等对方回复在线后进行真正的PK邀请)
+     * 尝试发起PK邀请，主播推流 (无法判断对方是否在线，因此先尝试发送邀请，等对方回复在线后进行真正的PK邀请)
      */
     TRY_INVITE_ANCHOR(6),
     /**
@@ -63,8 +63,12 @@ public enum PushMicNotificationType {
     /**
      * 对方已经退出音视频房间
      */
-    EXITED(14);
+    EXITED(14),
 
+    /**
+     * 尝试发起PK邀请，房间推流
+     */
+    TRY_ROOM_PUSH_INVITE_ANCHOR(15);
 
     private int value;
 

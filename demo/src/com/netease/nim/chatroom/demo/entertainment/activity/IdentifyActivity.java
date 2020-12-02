@@ -206,7 +206,7 @@ public class IdentifyActivity extends TActivity implements View.OnClickListener 
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.master_btn:
-                startActivityForResult(new Intent(IdentifyActivity.this, LiveModeChooseActivity.class), ACTION_REQ_CODE);
+                startActivityForResult(new Intent(IdentifyActivity.this, PushTypeChooseActivity.class), ACTION_REQ_CODE);
                 break;
             case R.id.audience_btn:
                 startActivityForResult(new Intent(IdentifyActivity.this, EnterRoomActivity.class), ACTION_REQ_CODE);

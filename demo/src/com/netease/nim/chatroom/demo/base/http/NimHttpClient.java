@@ -79,12 +79,9 @@ public class NimHttpClient {
                 final String res = response;
                 final int code = errorCode;
                 // do callback on ui thread
-                uiHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (callback != null) {
-                            callback.onResponse(res, code, null);
-                        }
+                uiHandler.post(() -> {
+                    if (callback != null) {
+                        callback.onResponse(res, code, null);
                     }
                 });
             }
@@ -242,7 +239,7 @@ public class NimHttpClient {
             LogUtil.e(TAG, "http post data error=" + e.getMessage());
             if (e instanceof NimHttpException) {
                 throw (NimHttpException) e;
-            } else if(e instanceof UnknownHostException) {
+            } else if (e instanceof UnknownHostException) {
                 throw new NimHttpException(408);
             }
 
