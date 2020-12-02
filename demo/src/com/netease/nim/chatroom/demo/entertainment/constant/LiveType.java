@@ -11,10 +11,12 @@ public enum LiveType {
      * 未直播
      */
     NOT_ONLINE(-1),
+
     /**
      * 视频类型
      */
     VIDEO_TYPE(AVChatType.VIDEO.getValue()),
+
     /**
      * 语音类型
      */

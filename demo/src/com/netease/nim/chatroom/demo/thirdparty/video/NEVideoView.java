@@ -636,13 +636,13 @@ public class NEVideoView extends SurfaceView implements NEVideoController.MediaP
     @Override
     public void start() {
         if (mMediaPlayer != null && mIsPrepared) {
-            onCurrentSyncContentListener = new OnCurrentSyncContentListener() {
-                @Override
-                public void onCurrentSyncContent(List<String> list) {
-                    for (String string : list) {
-                        Log.e(TAG, "onCurrentSyncContent: " + string + "\n");
-                        onVolumeCallBack.callBack(string);
+            onCurrentSyncContentListener = list -> {
+                for (String string : list) {
+                    Log.i(TAG, "onCurrentSyncContent: " + string + "\n");
+                    if (onVolumeCallBack == null) {
+                        return;
                     }
+                    onVolumeCallBack.callBack(string);
                 }
             };
             mMediaPlayer.setSyncOpen(true);

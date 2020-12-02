@@ -8,7 +8,7 @@ import com.alibaba.fastjson.JSONObject;
  */
 public class LikeAttachment extends CustomAttachment {
     public LikeAttachment() {
-        super(CustomAttachmentType.like);
+        super(CustomAttachmentType.ADD_LIKE);
     }
 
     @Override

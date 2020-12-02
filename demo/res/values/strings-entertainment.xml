@@ -8,6 +8,7 @@
     <string name="live_start">开始直播</string>
     <string name="live_prepare">准备中...</string>
     <string name="finish_confirm">确定结束直播？</string>
+    <string name="leave_confirm">确定离开直播？</string>
     <string name="confirm">确定</string>
     <string name="room_id_tip">请输入直播间ID号</string>
     <string name="send_gift">送了</string>

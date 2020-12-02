@@ -21,26 +21,30 @@ public class CustomAttachParser implements MsgAttachmentParser {
             int type = object.getInteger(KEY_TYPE);
             JSONObject data = object.getJSONObject(KEY_DATA);
             switch (type) {
-                case CustomAttachmentType.gift:
+                case CustomAttachmentType.GIFT:
                     attachment = new GiftAttachment();
                     break;
-                case CustomAttachmentType.like:
+                case CustomAttachmentType.ADD_LIKE:
                     attachment = new LikeAttachment();
                     break;
-                case CustomAttachmentType.connectedMic:
+                case CustomAttachmentType.CONNECTED_MIC:
                     attachment = new ConnectedAttachment();
                     break;
-                case CustomAttachmentType.disconnectMic:
+                case CustomAttachmentType.DISCONNECT_MIC:
                     attachment = new DisconnectAttachment();
+                    break;
+                case CustomAttachmentType.USER_LEAVE:
+                    attachment = new UserLeaveAttachment();
+                    break;
+                case CustomAttachmentType.USER_JOIN:
+                    attachment = new UserJoinAttachment();
                     break;
                 default:
                     attachment = new DefaultCustomAttachment();
                     break;
             }
 
-            if (attachment != null) {
-                attachment.fromJson(data);
-            }
+            attachment.fromJson(data);
         } catch (Exception e) {
 
         }

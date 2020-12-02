@@ -1,10 +1,12 @@
 package com.netease.nim.chatroom.demo;
 
 import android.app.Application;
-import android.os.Environment;
+import android.content.Context;
+import android.support.multidex.MultiDexApplication;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.faceunity.nama.FURenderer;
 import com.netease.nim.chatroom.demo.base.util.ScreenUtil;
 import com.netease.nim.chatroom.demo.base.util.crash.AppCrashHandler;
 import com.netease.nim.chatroom.demo.base.util.log.LogUtil;
@@ -21,10 +23,12 @@ import com.netease.nimlib.sdk.StatusBarNotificationConfig;
 import com.netease.nimlib.sdk.auth.LoginInfo;
 import com.netease.nimlib.sdk.msg.MsgService;
 
+import java.io.File;
+
 /**
  * Created by hzxuwen on 2016/2/25.
  */
-public class NimApplication extends Application {
+public class NimApplication extends MultiDexApplication {
     private static NimApplication nimApplication;
 
     @Override
@@ -43,13 +47,15 @@ public class NimApplication extends Application {
             // 注册自定义消息附件解析器
             NIMClient.getService(MsgService.class).registerCustomAttachmentParser(FlavorDependent.getInstance().getMsgAttachmentParser());
             // init tools
-            StorageUtil.init(this, null);
+            StorageUtil.init(this, ensureLogDirectory());
             ScreenUtil.init(this);
             DemoCache.initImageLoaderKit();
 
             // init log
             initLog();
             FlavorDependent.getInstance().onApplicationCreate();
+
+            FURenderer.setup(this);
         }
     }
 
@@ -86,8 +92,9 @@ public class NimApplication extends Application {
         options.statusBarNotificationConfig = config;
         UserPreferences.setStatusConfig(config);
 
+
         // 配置保存图片，文件，log等数据的目录
-        String sdkPath = Environment.getExternalStorageDirectory() + "/" + getPackageName() + "/nim/";
+        String sdkPath = ensureLogDirectory();
         options.sdkStorageRootPath = sdkPath;
         Log.i("demo", FlavorDependent.getInstance().getFlavorName() + " demo nim sdk log path=" + sdkPath);
 
@@ -119,5 +126,14 @@ public class NimApplication extends Application {
         String path = StorageUtil.getDirectoryByDirType(StorageType.TYPE_LOG);
         LogUtil.init(path, Log.DEBUG);
         LogUtil.i("demo", FlavorDependent.getInstance().getFlavorName() + " demo log path=" + path);
+    }
+
+    private String ensureLogDirectory() {
+
+        File log = getExternalFilesDir("nim");
+        if (log == null) {
+            log = getDir("nim", Context.MODE_PRIVATE);
+        }
+        return log.getAbsolutePath();
     }
 }

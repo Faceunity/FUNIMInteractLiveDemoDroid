@@ -62,8 +62,8 @@ public class InteractionAdapter extends BaseAdapter {
             convertView = inflater.inflate(R.layout.interaction_member_item, null);
             viewHolder = new InteractionMemberViewHolder();
             viewHolder.memberAvatar = convertView.findViewById(R.id.member_avatar);
-            viewHolder.memberName =  convertView.findViewById(R.id.member_name);
-            viewHolder.memberLinkBtn =  convertView.findViewById(R.id.vedio_link_btn);
+            viewHolder.memberName = convertView.findViewById(R.id.member_name);
+            viewHolder.memberLinkBtn = convertView.findViewById(R.id.vedio_link_btn);
             convertView.setTag(viewHolder);
         } else {
             viewHolder = (InteractionMemberViewHolder) convertView.getTag();
@@ -82,12 +82,7 @@ public class InteractionAdapter extends BaseAdapter {
                 } else {
                     viewHolder.memberLinkBtn.setText(R.string.audio_link);
                 }
-                viewHolder.memberLinkBtn.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        memberLinkListener.onClick(memberList.get(position));
-                    }
-                });
+                viewHolder.memberLinkBtn.setOnClickListener(v -> memberLinkListener.onClick(memberList.get(position)));
             }
         } else {
             viewHolder.memberName.setVisibility(View.VISIBLE);

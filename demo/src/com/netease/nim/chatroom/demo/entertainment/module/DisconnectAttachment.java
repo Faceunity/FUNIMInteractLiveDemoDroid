@@ -13,7 +13,7 @@ public class DisconnectAttachment extends CustomAttachment {
     private String account;
 
     public DisconnectAttachment() {
-        super(CustomAttachmentType.disconnectMic);
+        super(CustomAttachmentType.DISCONNECT_MIC);
     }
 
     public DisconnectAttachment(String account) {

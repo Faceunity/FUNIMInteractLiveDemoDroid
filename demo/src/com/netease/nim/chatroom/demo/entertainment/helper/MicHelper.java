@@ -1,5 +1,6 @@
 package com.netease.nim.chatroom.demo.entertainment.helper;
 
+import android.text.TextUtils;
 import android.widget.Toast;
 
 import com.alibaba.fastjson.JSONObject;
@@ -13,6 +14,8 @@ import com.netease.nim.chatroom.demo.entertainment.http.ChatRoomHttpClient;
 import com.netease.nim.chatroom.demo.entertainment.model.InteractionMember;
 import com.netease.nim.chatroom.demo.entertainment.module.ConnectedAttachment;
 import com.netease.nim.chatroom.demo.entertainment.module.DisconnectAttachment;
+import com.netease.nim.chatroom.demo.entertainment.module.UserJoinAttachment;
+import com.netease.nim.chatroom.demo.entertainment.module.UserLeaveAttachment;
 import com.netease.nimlib.sdk.NIMClient;
 import com.netease.nimlib.sdk.RequestCallback;
 import com.netease.nimlib.sdk.avchat.AVChatCallback;
@@ -44,6 +47,7 @@ public class MicHelper {
         return InstanceHolder.instance;
     }
 
+
     public interface ChannelCallback {
         void onJoinChannelSuccess();
 
@@ -58,7 +62,7 @@ public class MicHelper {
 
     // 连麦者主动断开连麦
     public void audienceBrokeMic(boolean isVideoMode, boolean isDisableVideo, String meetingName) {
-        leaveChannel(isVideoMode, isDisableVideo, true, meetingName);
+        leaveAndReleaseAVRoom(isVideoMode, isDisableVideo, meetingName);
     }
 
     // 去应用服务器移除队列
@@ -80,7 +84,7 @@ public class MicHelper {
     // 发送正在连麦通知
     public void sendLinkNotify(String roomId, InteractionMember member) {
         JSONObject json = new JSONObject();
-        json.put(PushLinkConstant.style, member.getAvChatType().getValue());
+        json.put(PushLinkConstant.LINK_STYLE, member.getAvChatType().getValue());
         MicHelper.getInstance().sendCustomNotify(roomId, member.getAccount(), PushMicNotificationType.CONNECTING_MIC.getValue(), json, true);
     }
 
@@ -92,14 +96,14 @@ public class MicHelper {
         if (json == null) {
             json = new JSONObject();
         }
-        json.put(PushLinkConstant.roomid, roomId);
-        json.put(PushLinkConstant.command, command);
+        json.put(PushLinkConstant.ROOM_ID, roomId);
+        json.put(PushLinkConstant.COMMAND, command);
         notification.setContent(json.toString());
         notification.setSendToOnlineUserOnly(isSendOnline);
         NIMClient.getService(MsgService.class).sendCustomNotification(notification).setCallback(new RequestCallback<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                LogUtil.d(TAG, "send custom type:" + command);
+                LogUtil.d(TAG, "send custom json :" + notification.getContent());
             }
 
             @Override
@@ -120,11 +124,11 @@ public class MicHelper {
         ChatRoomUpdateInfo chatRoomUpdateInfo = new ChatRoomUpdateInfo();
         chatRoomUpdateInfo.setName(roomInfo.getName());
         Map<String, Object> notifyExt = new HashMap<>();
-        notifyExt.put(PushLinkConstant.pkInviter, fromNickName);
-        notifyExt.put(PushLinkConstant.pkInvitee, toNickName);
-        notifyExt.put(PushLinkConstant.isPking, typePk);
-        notifyExt.put(PushLinkConstant.meetingName, meetingName);
-        notifyExt.put(PushLinkConstant.meetingUid, meetingUid);
+        notifyExt.put(PushLinkConstant.PK_INVITER, fromNickName);
+        notifyExt.put(PushLinkConstant.PK_INVITEE, toNickName);
+        notifyExt.put(PushLinkConstant.IS_PKING, typePk);
+        notifyExt.put(PushLinkConstant.MEETING_NAME, meetingName);
+        notifyExt.put(PushLinkConstant.MEETING_UID, meetingUid);
         notifyExt.put("type", liveType == LiveType.VIDEO_TYPE ? AVChatType.VIDEO.getValue() : AVChatType.AUDIO.getValue());
         chatRoomUpdateInfo.setExtension(notifyExt);
         NIMClient.getService(ChatRoomService.class).updateRoomInfo(roomId, chatRoomUpdateInfo, true, notifyExt);
@@ -138,18 +142,32 @@ public class MicHelper {
      * @param meetingName 音视频房间号
      */
     public void sendCustomPKNotify(String toAccount, final int command, String meetingName) {
+        sendCustomPKNotify(toAccount, command, meetingName, null, null);
+    }
+
+    public void sendCustomPKNotify(String toAccount, final int command, String meetingName, String pushUrl, String layoutParam) {
         CustomNotification notification = new CustomNotification();
         notification.setSessionId(toAccount);
         notification.setSessionType(SessionTypeEnum.P2P);
 
         JSONObject json = new JSONObject();
-        json.put(PushLinkConstant.pkRoomName, meetingName);
-        json.put(PushLinkConstant.style, AVChatType.VIDEO.getValue()); //只支持视频PK
-        json.put(PushLinkConstant.command, command);
+        json.put(PushLinkConstant.PK_ROOM_NAME, meetingName);
+        json.put(PushLinkConstant.LINK_STYLE, AVChatType.VIDEO.getValue());
+        json.put(PushLinkConstant.COMMAND, command);
+
         JSONObject infoJSON = new JSONObject();
-        infoJSON.put(PushLinkConstant.nick, DemoCache.getUserInfo().getName());
-        infoJSON.put(PushLinkConstant.avatar, "avatar_default");
-        json.put(PushLinkConstant.info, infoJSON);
+        infoJSON.put(PushLinkConstant.NICK, DemoCache.getUserInfo().getName());
+        infoJSON.put(PushLinkConstant.AVATAR, "avatar_default");
+
+        if (!TextUtils.isEmpty(pushUrl)) {
+            infoJSON.put(PushLinkConstant.PUSH_URL, pushUrl);
+        }
+
+        if (!TextUtils.isEmpty(layoutParam)) {
+            infoJSON.put(PushLinkConstant.LAYOUT_PARA, layoutParam);
+        }
+
+        json.put(PushLinkConstant.INFO, infoJSON);
         notification.setContent(json.toString());
 
         NIMClient.getService(MsgService.class).sendCustomNotification(notification).setCallback(new RequestCallback<Void>() {
@@ -196,18 +214,31 @@ public class MicHelper {
         NIMClient.getService(ChatRoomService.class).sendMessage(message, false);
     }
 
+
+    public void sendUserLeaveMsg(String roomId, String account) {
+        UserLeaveAttachment attachment = new UserLeaveAttachment(account);
+        ChatRoomMessage message = ChatRoomMessageBuilder.createChatRoomCustomMessage(roomId, attachment);
+        NIMClient.getService(ChatRoomService.class).sendMessage(message, false);
+    }
+
+    public void sendUserJoinMsg(String roomId, String account) {
+        UserJoinAttachment attachment = new UserJoinAttachment(account);
+        ChatRoomMessage message = ChatRoomMessageBuilder.createChatRoomCustomMessage(roomId, attachment);
+        NIMClient.getService(ChatRoomService.class).sendMessage(message, false);
+    }
+
     // 更新成员连麦状态
     public void updateMemberInChatRoom(String roomId, InteractionMember member) {
 
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(PushLinkConstant.style, member.getAvChatType().getValue());
-        jsonObject.put(PushLinkConstant.state, MicStateEnum.CONNECTED.getValue());
+        jsonObject.put(PushLinkConstant.LINK_STYLE, member.getAvChatType().getValue());
+        jsonObject.put(PushLinkConstant.LINK_STATE, MicStateEnum.CONNECTED.getValue());
 
         JSONObject info = new JSONObject();
-        info.put(PushLinkConstant.nick, member.getName());
-        info.put(PushLinkConstant.avatar, member.getAvatar());
-        info.put(PushLinkConstant.meetingUid, AVChatManager.getInstance().getUidByAccount(member.getAccount()));
-        jsonObject.put(PushLinkConstant.info, info);
+        info.put(PushLinkConstant.NICK, member.getName());
+        info.put(PushLinkConstant.AVATAR, member.getAvatar());
+        info.put(PushLinkConstant.MEETING_UID, AVChatManager.getInstance().getUidByAccount(member.getAccount()));
+        jsonObject.put(PushLinkConstant.INFO, info);
 
         NIMClient.getService(ChatRoomService.class).updateQueue(roomId, member.getAccount(), jsonObject.toString()).setCallback(new RequestCallback<Void>() {
             @Override
@@ -229,8 +260,10 @@ public class MicHelper {
 
     /**************************** 音视频房间操作 **********************************/
 
-    public void joinChannel(String meetingName, boolean isVideo, final ChannelCallback callback) {
-        LogUtil.d(TAG, "joinChannel,isVideo:" + isVideo + " meetingName:" + meetingName);
+    public void joinAVRoom(String meetingName, boolean isVideo, final ChannelCallback callback) {
+
+        LogUtil.d(TAG, "joinAVRoom , isVideo : " + isVideo + " meetingName: " + meetingName);
+
         if (meetingName == null) {
             LogUtil.d(TAG, "meeting name is null,return");
             return;
@@ -246,6 +279,7 @@ public class MicHelper {
             @Override
             public void onFailed(int i) {
                 LogUtil.e(TAG, "join channel failed, code:" + i);
+                AVChatManager.getInstance().leaveRoom2(meetingName, null);
                 callback.onJoinChannelFailed();
             }
 
@@ -256,9 +290,41 @@ public class MicHelper {
         });
     }
 
+    public void joinAVRoom(String meetingName, boolean isVideo, final AVChatCallback<AVChatData> callback) {
+
+        LogUtil.d(TAG, "joinAVRoom,isVideo:" + isVideo + " meetingName:" + meetingName);
+
+        if (meetingName == null) {
+            LogUtil.d(TAG, "meeting name is null,return");
+            callback.onFailed(-1);
+            return;
+        }
+        AVChatManager.getInstance().joinRoom2(meetingName, isVideo ? AVChatType.VIDEO : AVChatType.AUDIO, new AVChatCallback<AVChatData>() {
+            @Override
+            public void onSuccess(AVChatData avChatData) {
+                LogUtil.d(TAG, "join channel success");
+                callback.onSuccess(avChatData);
+
+            }
+
+            @Override
+            public void onFailed(int i) {
+                LogUtil.e(TAG, "join channel failed, code:" + i);
+                AVChatManager.getInstance().leaveRoom2(meetingName, null);
+                callback.onFailed(i);
+            }
+
+            @Override
+            public void onException(Throwable throwable) {
+                LogUtil.e(TAG, "join channel exception, throwable:" + throwable.getMessage());
+                callback.onException(throwable);
+            }
+        });
+    }
+
     // 离开音视频房间
-    public void leaveChannel(boolean isVideoMode, boolean isDisableVideo, boolean isLeaveRoom, String meetingName) {
-        LogUtil.d(TAG, "leaveRoom,isVideoMode:" + isVideoMode + " isDisableVideo:" + isDisableVideo + " isLeaveRoom:" + isLeaveRoom + " meetingName:" + meetingName);
+    public void leaveAndReleaseAVRoom(boolean isVideoMode, boolean isDisableVideo, String meetingName) {
+        LogUtil.d(TAG, "leaveRoom,isVideoMode:" + isVideoMode + " isDisableVideo:" + isDisableVideo + " meetingName:" + meetingName);
         if (meetingName == null) {
             LogUtil.d(TAG, "meeting name is null,return");
             return;
@@ -270,24 +336,22 @@ public class MicHelper {
         if (isDisableVideo) {
             AVChatManager.getInstance().disableVideo();
         }
-        if (isLeaveRoom) {
-            AVChatManager.getInstance().leaveRoom2(meetingName, new AVChatCallback<Void>() {
-                @Override
-                public void onSuccess(Void aVoid) {
-                    LogUtil.d(TAG, "leave channel success");
-                }
+        AVChatManager.getInstance().leaveRoom2(meetingName, new AVChatCallback<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                LogUtil.d(TAG, "leave channel success");
+            }
 
-                @Override
-                public void onFailed(int i) {
-                    LogUtil.e(TAG, "leave channel failed, code:" + i);
-                }
+            @Override
+            public void onFailed(int i) {
+                LogUtil.e(TAG, "leave channel failed, code:" + i);
+            }
 
-                @Override
-                public void onException(Throwable throwable) {
-                    LogUtil.e(TAG, "leave channel exception, throwable:" + throwable.getMessage());
-                }
-            });
-        }
+            @Override
+            public void onException(Throwable throwable) {
+                LogUtil.e(TAG, "leave channel exception, throwable:" + throwable.getMessage());
+            }
+        });
         AVChatManager.getInstance().disableRtc();
     }
 
