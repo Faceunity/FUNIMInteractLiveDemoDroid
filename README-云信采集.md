@@ -2,8 +2,6 @@ FUNIMInteractLiveDemo是集成了 FaceUnity 美颜贴纸功能和 **网易云信
 
 本文是 FaceUnity SDK 快速对接云信即时通讯的导读说明，SDK 版本为 **7.2.0**。关于 SDK 的详细说明，请参看 **[FULiveDemoDroid](https://github.com/Faceunity/FULiveDemoDroid/)**。
 
-**存在问题：在进行渲染时，旋转手机时会有一帧画面会旋转，导致画面闪烁。经过网易云信确实，是云信SDK bug**
-
 **退出直播界面，再次进入，切换相机失败。经网易云信确认，切换相机需要在开启直播后才能调用，否则就会出这个问题。**
 
 --------
