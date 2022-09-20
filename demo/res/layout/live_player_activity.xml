@@ -340,4 +340,13 @@
         android:textSize="15sp"
         android:textColor="#000000"/>
 
+    <TextView
+        android:id="@+id/tv_trace_face"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/toast_not_detect_face"
+        android:textColor="@color/white"
+        android:layout_centerInParent="true"
+        />
+
 </RelativeLayout>

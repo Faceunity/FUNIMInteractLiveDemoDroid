@@ -182,4 +182,5 @@
         android:layout_alignParentBottom="true"
         android:layout_marginLeft="10dp"
         android:background="@drawable/control_extend_top_selector" />
+
 </RelativeLayout>

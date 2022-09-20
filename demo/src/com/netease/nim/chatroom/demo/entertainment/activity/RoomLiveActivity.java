@@ -41,9 +41,18 @@ import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.faceunity.core.enumeration.CameraFacingEnum;
+import com.faceunity.core.enumeration.FUAIProcessorEnum;
+import com.faceunity.core.enumeration.FUInputBufferEnum;
+import com.faceunity.core.enumeration.FUTransformMatrixEnum;
+import com.faceunity.core.faceunity.FURenderKit;
+import com.faceunity.core.utils.CameraUtils;
 import com.faceunity.nama.FURenderer;
+import com.faceunity.nama.data.FaceUnityDataFactory;
+import com.faceunity.nama.listener.FURendererListener;
 import com.faceunity.nama.ui.FaceUnityView;
-import com.faceunity.nama.utils.CameraUtils;
+//import com.faceunity.nama.utils.CameraUtils;
+import com.faceunity.wrapper.faceunity;
 import com.netease.nim.chatroom.demo.DemoCache;
 import com.netease.nim.chatroom.demo.R;
 import com.netease.nim.chatroom.demo.base.util.ScreenUtil;
@@ -132,6 +141,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
@@ -300,12 +310,59 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
 
 
     // FU 美颜
-    private FURenderer mFURenderer;
+    private FURenderer mFURenderer = FURenderer.getInstance();
     private boolean mIsFirstFrame = true;
     private boolean mIsFuBeautyOpen;
     private int mSkippedFrames;
-    private int mCameraFacing = Camera.CameraInfo.CAMERA_FACING_FRONT;
+//    private int mCameraFacing = Camera.CameraInfo.CAMERA_FACING_FRONT;
     private SensorManager mSensorManager;
+    private FaceUnityView mFaceUnityView;
+    private FaceUnityDataFactory mFaceUnityDataFactory= new FaceUnityDataFactory(0);
+    private TextView mTvFps;
+    private TextView mTvTraceFace;
+    private int mCameraFacing = Camera.CameraInfo.CAMERA_FACING_FRONT;
+
+    private FURendererListener mFURendererListener = new FURendererListener() {
+
+        @Override
+        public void onPrepare() {
+            mFaceUnityDataFactory.bindCurrentRenderer();
+        }
+
+        @Override
+        public void onTrackStatusChanged(FUAIProcessorEnum type, int status) {
+            Log.e(TAG, "onTrackStatusChanged: 人脸数: " + status);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (mTvTraceFace != null) {
+                        mTvTraceFace.setVisibility(status > 0 ? View.GONE : View.VISIBLE);
+                        if (type == FUAIProcessorEnum.FACE_PROCESSOR) {
+                            mTvTraceFace.setText(R.string.toast_not_detect_face);
+                        }else if (type == FUAIProcessorEnum.HUMAN_PROCESSOR) {
+                            mTvTraceFace.setText(R.string.toast_not_detect_body);
+                        }
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void onFpsChanged(double fps, double callTime) {
+            final String FPS = String.format(Locale.getDefault(), "%.2f", fps);
+            Log.e(TAG, "onFpsChanged: FPS " + FPS + " callTime " + String.format(Locale.getDefault(), "%.2f", callTime));
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mTvFps.setText(FPS);
+                }
+            });
+        }
+
+        @Override
+        public void onRelease() {
+        }
+    };
 
 
     public static void start(Context context, boolean isVideo) {
@@ -320,6 +377,16 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        releaseEngine();
+
+        mFURenderer.setInputBufferType(FUInputBufferEnum.FU_FORMAT_I420_BUFFER);
+        mFURenderer.setInputOrientation(0);
+        mFURenderer.setInputTextureMatrix(FUTransformMatrixEnum.CCROT0_FLIPVERTICAL);
+        mFURenderer.setInputBufferMatrix(FUTransformMatrixEnum.CCROT0_FLIPVERTICAL);
+        mFURenderer.setOutputMatrix(FUTransformMatrixEnum.CCROT0);
+        mFURenderer.prepareRenderer(mFURendererListener);
+        mFURenderer.setMarkFPSEnable(true);
+
         super.onCreate(savedInstanceState);
         if (!copyMusicFile()) {
             return;
@@ -578,6 +645,9 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
         //焦距
         focalLengthBtn = findView(R.id.enlarge_btn);
         findFocalLengthLayout();
+
+        mTvFps = findView(R.id.tv_fps);
+        mTvTraceFace = findView(R.id.tv_trace_face);
 
         // 直播结束
         liveFinishLayout = findView(R.id.live_finish_layout);
@@ -1339,22 +1409,15 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
             }
         });
 
-        FaceUnityView beautyControlView = findView(R.id.fu_beauty_control);
+        mFaceUnityView = findView(R.id.fu_beauty_control);
         if (mIsFuBeautyOpen) {
-            if (mFURenderer == null) {
-                mFURenderer = new FURenderer.Builder(this)
-                        .setCreateEglContext(true)
-                        .setInputTextureType(FURenderer.INPUT_TEXTURE_2D)
-                        .setCameraFacing(mCameraFacing)
-                        .setInputImageOrientation(CameraUtils.getCameraOrientation(mCameraFacing))
-                        .build();
-            }
-            beautyControlView.setModuleManager(mFURenderer);
+            mFaceUnityView.bindDataFactory(mFaceUnityDataFactory);
             mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
             Sensor sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             mSensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+
         } else {
-            beautyControlView.setVisibility(View.GONE);
+            mFaceUnityView.setVisibility(View.GONE);
         }
     }
 
@@ -2099,7 +2162,6 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
 
 
         private byte[] i420Byte;
-        private byte[] readbackByte;
 
         /**
          * 视频数据外部处理接口, 此接口需要同步执行. 操作运行在视频数据发送线程上,处理速度过慢会导致帧率过低
@@ -2124,29 +2186,30 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
 //            + ", input " + input);
             if (mIsFirstFrame) {
                 mVideoEffectHandler = new Handler(Looper.myLooper());
-                mFURenderer.onSurfaceCreated();
                 int dataSize = width * height * 3 / 2;
                 i420Byte = new byte[dataSize];
-                readbackByte = new byte[dataSize];
                 mIsFirstFrame = false;
+                mFaceUnityDataFactory.bindCurrentRenderer();
             }
 
             // I420 格式
             if (format == VideoFrameFormat.kVideoI420) {
                 buffer.toBytes(i420Byte);
                 // FU 美颜滤镜
-                mFURenderer.onDrawFrameSingleInput(i420Byte, width, height,
-                        FURenderer.INPUT_FORMAT_I420_BUFFER, readbackByte, width, height);
+
                 if (mSkippedFrames > 0) {
                     mSkippedFrames--;
+                    faceunity.fuClearCacheResource();
+                    faceunity.fuOnCameraChange();
                     VideoFrame.Buffer rotatedBuffer = buffer.rotate(videoFilterParameter.frameRotation);
                     VideoFrame outputFrame = new VideoFrame(rotatedBuffer, rotation, input.getTimestampMs());
                     outputFrames[0] = outputFrame;
                 } else {
-                    // 数据回传
+//                     数据回传
                     try {
-                        VideoFrame.Buffer outputBuffer = VideoFrame.asBuffer(readbackByte, format, width, height);
+                        VideoFrame.Buffer outputBuffer = VideoFrame.asBuffer(mFURenderer.onDrawFrameSingleInput(i420Byte, width, height), format, width, height);
                         VideoFrame.Buffer rotatedBuffer = outputBuffer.rotate(videoFilterParameter.frameRotation);
+                        outputBuffer.release();
                         VideoFrame outputFrame = new VideoFrame(rotatedBuffer, rotation, input.getTimestampMs());
                         outputFrames[0] = outputFrame;
                     } catch (IllegalAccessException e) {
@@ -2154,6 +2217,7 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
                     }
                 }
             }
+
             input.release();
             return true;
         }
@@ -2191,15 +2255,6 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
             if (event == AVChatDeviceEvent.VIDEO_CAMERA_SWITCH_OK) {
                 notifyCapturerConfigChange();
                 mSkippedFrames = 3;
-                mCameraFacing = mCameraFacing == Camera.CameraInfo.CAMERA_FACING_FRONT
-                        ? Camera.CameraInfo.CAMERA_FACING_BACK : Camera.CameraInfo.CAMERA_FACING_FRONT;
-                if (mFURenderer != null) {
-                    mFURenderer.onCameraChanged(mCameraFacing, CameraUtils.getCameraOrientation(mCameraFacing));
-                    if (mFURenderer.getMakeupModule() != null) {
-                        mFURenderer.getMakeupModule().setIsMakeupFlipPoints(mCameraFacing == Camera.CameraInfo.CAMERA_FACING_FRONT
-                                ? 0 : 1);
-                    }
-                }
             }
         }
 
@@ -2347,7 +2402,8 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
                     }
                     break;
                 case R.id.start_switch_btn:
-                    mVideoCapturer.switchCamera();
+//                    mVideoCapturer.switchCamera();
+                    switchCamera();
                     break;
                 case R.id.start_beauty_btn:
                 case R.id.beauty_btn:
@@ -2384,7 +2440,8 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
                     updateControlUI();
                     break;
                 case R.id.switch_btn:
-                    mVideoCapturer.switchCamera();
+//                    mVideoCapturer.switchCamera();
+                    switchCamera();
                     videoFocalLengthSb.setProgress(0);
                     mVideoCapturer.setZoom(0);
                     if (isVideoFlashOpen) {
@@ -2474,6 +2531,26 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
         roomInfo = null;
         startPreview();
         MicHelper.getInstance().sendUserLeaveMsg(roomId, DemoCache.getAccount());
+    }
+
+    public void switchCamera() {
+        Log.d(TAG, "switchCamera: ");
+        mVideoCapturer.switchCamera();
+        boolean isFront = mCameraFacing == Camera.CameraInfo.CAMERA_FACING_FRONT;
+        mCameraFacing = isFront ? Camera.CameraInfo.CAMERA_FACING_BACK : Camera.CameraInfo.CAMERA_FACING_FRONT;
+        mSkippedFrames = 5;
+        if (mCameraFacing ==  Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            mFURenderer.setCameraFacing(CameraFacingEnum.CAMERA_FRONT);
+            mFURenderer.setInputTextureMatrix(FUTransformMatrixEnum.CCROT0_FLIPVERTICAL);
+            mFURenderer.setInputBufferMatrix(FUTransformMatrixEnum.CCROT0_FLIPVERTICAL);
+            mFURenderer.setOutputMatrix(FUTransformMatrixEnum.CCROT0);
+        }else {
+            mFURenderer.setCameraFacing(CameraFacingEnum.CAMERA_BACK);
+            mFURenderer.setInputTextureMatrix(FUTransformMatrixEnum.CCROT0);
+            mFURenderer.setInputBufferMatrix(FUTransformMatrixEnum.CCROT0);
+            mFURenderer.setOutputMatrix(FUTransformMatrixEnum.CCROT0_FLIPVERTICAL);
+        }
+
     }
 
 
@@ -2815,9 +2892,10 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
 
     private void releaseEngine() {
         if (liveType == LiveType.VIDEO_TYPE) {
-            releaseVideoEffect();
+
             AVChatManager.getInstance().stopVideoPreview();
             AVChatManager.getInstance().disableVideo();
+            releaseVideoEffect();
         }
         AVChatManager.getInstance().disableRtc();
         isReleaseEngine = true;
@@ -2897,7 +2975,7 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
         if (isReleaseEngine) {
             return;
         }
-        releaseVideoEffect();
+
         isReleaseEngine = true;
         String meetName = meetingName;
         if (pkStateEnum == PKStateEnum.PKING) {
@@ -2906,6 +2984,7 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
             pkStateEnum = PKStateEnum.NONE;
         }
         MicHelper.getInstance().leaveAndReleaseAVRoom(liveType == LiveType.VIDEO_TYPE, liveType == LiveType.VIDEO_TYPE, meetName);
+        releaseVideoEffect();
     }
 
     private void releaseVideoEffect() {
@@ -2913,27 +2992,30 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
         if (liveType != LiveType.VIDEO_TYPE) {
             return;
         }
+        mSkippedFrames = 5;
         // 释放资源
         isUnInitVideoEffect = true;
-        if (mVideoEffectHandler != null) {
-            final CountDownLatch countDownLatch = new CountDownLatch(1);
-            mVideoEffectHandler.post(() -> {
-
+//        if (mVideoEffectHandler != null) {
+//            final CountDownLatch countDownLatch = new CountDownLatch(1);
+//            mVideoEffectHandler.post(() -> {
+        FURenderKit.getInstance().releaseSafe();
                 if (mFURenderer != null) {
-                    mFURenderer.onSurfaceDestroyed();
-                    mFURenderer = null;
+//                    mFURenderer.onSurfaceDestroyed();
+                    mFURenderer.release();
+//                    mFURenderer = null;
                 }
-                countDownLatch.countDown();
+//                countDownLatch.countDown();
 
                 isFilterTypeSet = false;
                 mVideoEffect = null;
-            });
-            try {
-                countDownLatch.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+//            });
+//            try {
+//                countDownLatch.await();
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//        }
+
     }
 
     @Override
@@ -3330,11 +3412,11 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
     public void onSensorChanged(SensorEvent event) {
         float x = event.values[0];
         float y = event.values[1];
-        if (mFURenderer != null && (Math.abs(x) > 3 || Math.abs(y) > 3)) {
+        if (Math.abs(x) > 3 || Math.abs(y) > 3) {
             if (Math.abs(x) > Math.abs(y)) {
-                mFURenderer.onDeviceOrientationChanged(x > 0 ? 0 : 180);
+                mFURenderer.setDeviceOrientation(x > 0 ? 270 : 270);
             } else {
-                mFURenderer.onDeviceOrientationChanged(y > 0 ? 90 : 270);
+                mFURenderer.setDeviceOrientation(y > 0 ? 180 : 180);
             }
         }
     }

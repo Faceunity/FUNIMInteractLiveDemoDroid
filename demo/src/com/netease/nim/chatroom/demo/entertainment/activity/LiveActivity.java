@@ -16,6 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Log;
@@ -39,9 +40,12 @@ import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.faceunity.core.enumeration.FUAIProcessorEnum;
 import com.faceunity.nama.FURenderer;
+import com.faceunity.nama.data.FaceUnityDataFactory;
+import com.faceunity.nama.listener.FURendererListener;
 import com.faceunity.nama.ui.FaceUnityView;
-import com.faceunity.nama.utils.CameraUtils;
+import com.faceunity.core.utils.CameraUtils;
 import com.netease.nim.chatroom.demo.DemoCache;
 import com.netease.nim.chatroom.demo.R;
 import com.netease.nim.chatroom.demo.base.util.ScreenUtil;
@@ -110,6 +114,9 @@ import com.netease.nimlib.sdk.chatroom.model.ChatRoomMember;
 import com.netease.nimlib.sdk.chatroom.model.ChatRoomUpdateInfo;
 import com.netease.nimlib.sdk.msg.MsgServiceObserve;
 import com.netease.nimlib.sdk.msg.model.CustomNotification;
+import com.netease.nrtc.sdk.common.VideoFilterParameter;
+import com.netease.nrtc.sdk.video.VideoFrame;
+import com.netease.nrtc.video.coding.VideoFrameFormat;
 import com.netease.vcloud.video.effect.VideoEffect;
 
 import org.json.JSONException;
@@ -125,6 +132,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * 主播端
@@ -283,6 +291,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     // FU 美颜
     private FURenderer mFURenderer;
     private TextView mTvFps;
+    private TextView mTvTraceFace;
     private boolean mIsFirstFrame = true;
     private boolean mIsFuBeautyOpen;
     private int mSkippedFrames;
@@ -290,6 +299,8 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     private SensorManager mSensorManager;
     private CSVUtils mCSVUtils;
     private CameraRenderer mCameraRenderer;
+    private FaceUnityView mFaceUnityView;
+    private FaceUnityDataFactory mFaceUnityDataFactory= new FaceUnityDataFactory(0);
 
     public static void start(Context context, boolean isVideo, boolean isCreator) {
         Intent intent = new Intent();
@@ -302,8 +313,8 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        releaseEngine();
         super.onCreate(savedInstanceState);
-        mTvFps = findViewById(R.id.tv_fps);
         //目前伴音功能的音乐文件，nrtc的SDK只支持读取存储空间里面的音乐文件，不支持assets中的文件，所以这里将文件拷贝到存储空间里面
         if (Environment.getExternalStorageDirectory() != null) {
 
@@ -338,6 +349,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         }
         startLiveSwitchLayout.setVisibility(View.GONE);
         requestLivePermission(); // 请求权限
+//        mFURenderer.setup(this);
     }
 
     @Override
@@ -584,6 +596,9 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         netStateTipText = findView(R.id.net_state_tip);
         netStateImage = findView(R.id.network_image);
         netOperateText = findView(R.id.network_operation_tip);
+
+        mTvFps = findViewById(R.id.tv_fps);
+        mTvTraceFace = findViewById(R.id.tv_trace_face);
 
         findPkLayout();
 
@@ -1289,33 +1304,77 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
             }
         });
 
-        FaceUnityView beautyControlView = findView(R.id.fu_beauty_control);
+        mFaceUnityView = findView(R.id.fu_beauty_control);
         if (mIsFuBeautyOpen) {
-            mCameraRenderer = new CameraRenderer(this, new FURenderer.OnDebugListener() {
-                @Override
-                public void onFpsChanged(double fps, double callTime) {
-                    final String FPS = String.format(Locale.getDefault(), "%.2f", fps);
-                    Log.e(TAG, "onFpsChanged: FPS " + FPS + " callTime " + String.format(Locale.getDefault(), "%.2f", callTime));
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (mTvFps != null) {
-                                mTvFps.setText("FPS: " + FPS);
-                            }
-                        }
-                    });
-                }
-            });
+            mCameraRenderer = new CameraRenderer(this, mFaceUnityDataFactory, mFURendererListener);
+//                @Override
+//                public void onFpsChanged(double fps, double callTime) {
+//                    final String FPS = String.format(Locale.getDefault(), "%.2f", fps);
+//                    Log.e(TAG, "onFpsChanged: FPS " + FPS + " callTime " + String.format(Locale.getDefault(), "%.2f", callTime));
+//                    runOnUiThread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            if (mTvFps != null) {
+//                                mTvFps.setText("FPS: " + FPS);
+//                            }
+//                        }
+//                    });
+//                }
+
             mFURenderer = mCameraRenderer.getFURenderer();
-            beautyControlView.setModuleManager(mFURenderer);
-            mFURenderer.onDeviceOrientationChanged(90);
+            mFaceUnityView.bindDataFactory(mFaceUnityDataFactory);
+//            beautyControlView.setModuleManager(mFURenderer);
+//            mFURenderer.onDeviceOrientationChanged(90);
             mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
             Sensor sensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             mSensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
         } else {
-            beautyControlView.setVisibility(View.GONE);
+            mCameraRenderer = new CameraRenderer(this, mFaceUnityDataFactory, mFURendererListener);
+            mFaceUnityView.setVisibility(View.GONE);
         }
     }
+
+    private FURendererListener mFURendererListener = new FURendererListener() {
+
+        @Override
+        public void onPrepare() {
+            mFaceUnityDataFactory.bindCurrentRenderer();
+        }
+
+        @Override
+        public void onTrackStatusChanged(FUAIProcessorEnum type, int status) {
+            Log.e(TAG, "onTrackStatusChanged: 人脸数: " + status);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    if (mTvTraceFace != null) {
+                        mTvTraceFace.setVisibility(status > 0 ? View.GONE : View.VISIBLE);
+                        if (type == FUAIProcessorEnum.FACE_PROCESSOR) {
+                            mTvTraceFace.setText(R.string.toast_not_detect_face);
+                        }else if (type == FUAIProcessorEnum.HUMAN_PROCESSOR) {
+                            mTvTraceFace.setText(R.string.toast_not_detect_body);
+                        }
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void onFpsChanged(double fps, double callTime) {
+            final String FPS = String.format(Locale.getDefault(), "%.2f", fps);
+            Log.e(TAG, "onFpsChanged: FPS " + FPS + " callTime " + String.format(Locale.getDefault(), "%.2f", callTime));
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    mTvFps.setText(FPS);
+                }
+            });
+        }
+
+        @Override
+        public void onRelease() {
+        }
+    };
 
     private void findClarityLayout() {
         videoClarityLayout = findView(R.id.video_clarity_layout);
@@ -1963,11 +2022,11 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                 mCameraFacing = mCameraFacing == Camera.CameraInfo.CAMERA_FACING_FRONT
                         ? Camera.CameraInfo.CAMERA_FACING_BACK : Camera.CameraInfo.CAMERA_FACING_FRONT;
                 if (mFURenderer != null) {
-                    mFURenderer.onCameraChanged(mCameraFacing, CameraUtils.getCameraOrientation(mCameraFacing));
-                    if (mFURenderer.getMakeupModule() != null) {
-                        mFURenderer.getMakeupModule().setIsMakeupFlipPoints(mCameraFacing == Camera.CameraInfo.CAMERA_FACING_FRONT
-                                ? 0 : 1);
-                    }
+//                    mFURenderer.onCameraChanged(mCameraFacing, CameraUtils.getCameraOrientation(mCameraFacing));
+//                    if (mFURenderer.getMakeupModule() != null) {
+//                        mFURenderer.getMakeupModule().setIsMakeupFlipPoints(mCameraFacing == Camera.CameraInfo.CAMERA_FACING_FRONT
+//                                ? 0 : 1);
+//                    }
                 }
             }
         }
@@ -2126,7 +2185,8 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
                     updateControlUI();
                     break;
                 case R.id.switch_btn:
-                    mVideoCapturer.switchCamera();
+//                    mVideoCapturer.switchCamera();
+                    mCameraRenderer.switchCamera();
                     videoFocalLengthSb.setProgress(0);
                     mVideoCapturer.setZoom(0);
                     if (isVideoFlashOpen) {
@@ -2975,9 +3035,9 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         float y = event.values[1];
         if (mFURenderer != null && (Math.abs(x) > 3 || Math.abs(y) > 3)) {
             if (Math.abs(x) > Math.abs(y)) {
-                mFURenderer.onDeviceOrientationChanged(x > 0 ? 0 : 180);
+                mFURenderer.setDeviceOrientation(x > 0 ? 0 : 180);
             } else {
-                mFURenderer.onDeviceOrientationChanged(y > 0 ? 90 : 270);
+                mFURenderer.setDeviceOrientation(y > 0 ? 90 : 270);
             }
         }
     }
@@ -2995,9 +3055,9 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
         String filePath = Constant.filePath + dateStrDir + File.separator + "excel-" + dateStrFile + ".csv";
         Log.d(TAG, "initLog: CSV file path:" + filePath);
         StringBuilder headerInfo = new StringBuilder();
-        headerInfo.append("version：").append(FURenderer.getVersion()).append(CSVUtils.COMMA)
-                .append("机型：").append(Build.MANUFACTURER).append(Build.MODEL)
-                .append("处理方式：Texture").append(CSVUtils.COMMA);
+//        headerInfo.append("version：").append(FURenderer.getVersion()).append(CSVUtils.COMMA)
+//                .append("机型：").append(android.os.Build.MANUFACTURER).append(android.os.Build.MODEL)
+//                .append("处理方式：Texture").append(CSVUtils.COMMA);
         mCSVUtils.initHeader(filePath, headerInfo);
     }
 
