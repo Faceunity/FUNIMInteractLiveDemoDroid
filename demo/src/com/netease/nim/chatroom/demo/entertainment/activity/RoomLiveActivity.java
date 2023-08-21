@@ -45,13 +45,17 @@ import com.faceunity.core.enumeration.CameraFacingEnum;
 import com.faceunity.core.enumeration.FUAIProcessorEnum;
 import com.faceunity.core.enumeration.FUInputBufferEnum;
 import com.faceunity.core.enumeration.FUTransformMatrixEnum;
+import com.faceunity.core.faceunity.FUAIKit;
 import com.faceunity.core.faceunity.FURenderKit;
+import com.faceunity.core.model.facebeauty.FaceBeautyBlurTypeEnum;
 import com.faceunity.core.utils.CameraUtils;
+import com.faceunity.nama.FUConfig;
 import com.faceunity.nama.FURenderer;
 import com.faceunity.nama.data.FaceUnityDataFactory;
 import com.faceunity.nama.listener.FURendererListener;
 import com.faceunity.nama.ui.FaceUnityView;
 //import com.faceunity.nama.utils.CameraUtils;
+import com.faceunity.nama.utils.FuDeviceUtils;
 import com.faceunity.wrapper.faceunity;
 import com.netease.nim.chatroom.demo.DemoCache;
 import com.netease.nim.chatroom.demo.R;
@@ -317,7 +321,7 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
 //    private int mCameraFacing = Camera.CameraInfo.CAMERA_FACING_FRONT;
     private SensorManager mSensorManager;
     private FaceUnityView mFaceUnityView;
-    private FaceUnityDataFactory mFaceUnityDataFactory= new FaceUnityDataFactory(0);
+    private FaceUnityDataFactory mFaceUnityDataFactory= new FaceUnityDataFactory(-1);
     private TextView mTvFps;
     private TextView mTvTraceFace;
     private int mCameraFacing = Camera.CameraInfo.CAMERA_FACING_FRONT;
@@ -2207,6 +2211,11 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
                 } else {
 //                     数据回传
                     try {
+
+                        if (FUConfig.DEVICE_LEVEL > FuDeviceUtils.DEVICE_LEVEL_MID) {
+                            cheekFaceNum();
+                        }
+
                         VideoFrame.Buffer outputBuffer = VideoFrame.asBuffer(mFURenderer.onDrawFrameSingleInput(i420Byte, width, height), format, width, height);
                         VideoFrame.Buffer rotatedBuffer = outputBuffer.rotate(videoFilterParameter.frameRotation);
                         outputBuffer.release();
@@ -2220,6 +2229,23 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
 
             input.release();
             return true;
+        }
+
+        private void cheekFaceNum() {
+            //根据有无人脸 + 设备性能 判断开启的磨皮类型
+            float faceProcessorGetConfidenceScore = FUAIKit.getInstance().getFaceProcessorGetConfidenceScore(0);
+            if (faceProcessorGetConfidenceScore >= 0.95) {
+                //高端手机并且检测到人脸开启均匀磨皮，人脸点位质
+                if (FURenderKit.getInstance().getFaceBeauty() != null && FURenderKit.getInstance().getFaceBeauty().getBlurType() != FaceBeautyBlurTypeEnum.EquallySkin) {
+                    FURenderKit.getInstance().getFaceBeauty().setBlurType(FaceBeautyBlurTypeEnum.EquallySkin);
+                    FURenderKit.getInstance().getFaceBeauty().setEnableBlurUseMask(true);
+                }
+            } else {
+                if (FURenderKit.getInstance().getFaceBeauty() != null && FURenderKit.getInstance().getFaceBeauty().getBlurType() != FaceBeautyBlurTypeEnum.FineSkin) {
+                    FURenderKit.getInstance().getFaceBeauty().setBlurType(FaceBeautyBlurTypeEnum.FineSkin);
+                    FURenderKit.getInstance().getFaceBeauty().setEnableBlurUseMask(false);
+                }
+            }
         }
 
 

@@ -1,12 +1,11 @@
 package com.netease.nim.chatroom.demo;
 
-import android.app.Application;
 import android.content.Context;
 import android.support.multidex.MultiDexApplication;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.faceunity.FUConfig;
+import com.faceunity.nama.FUConfig;
 import com.faceunity.nama.FURenderer;
 import com.faceunity.nama.utils.FuDeviceUtils;
 import com.netease.nim.chatroom.demo.base.util.ScreenUtil;
@@ -40,7 +39,7 @@ public class NimApplication extends MultiDexApplication {
         nimApplication = this;
         DemoCache.setContext(this);
 
-        FUConfig.DEVICE_LEVEL = FuDeviceUtils.judgeDeviceLevel(this);
+        FUConfig.DEVICE_LEVEL = FuDeviceUtils.judgeDeviceLevelGPU();
 
         NIMClient.init(this, getLoginInfo(), getOptions());
 

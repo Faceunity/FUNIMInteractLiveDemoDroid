@@ -300,7 +300,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
     private CSVUtils mCSVUtils;
     private CameraRenderer mCameraRenderer;
     private FaceUnityView mFaceUnityView;
-    private FaceUnityDataFactory mFaceUnityDataFactory= new FaceUnityDataFactory(0);
+    private FaceUnityDataFactory mFaceUnityDataFactory= new FaceUnityDataFactory(-1);
 
     public static void start(Context context, boolean isVideo, boolean isCreator) {
         Intent intent = new Intent();

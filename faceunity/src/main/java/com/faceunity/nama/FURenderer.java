@@ -20,6 +20,7 @@ import com.faceunity.core.faceunity.FURenderManager;
 import com.faceunity.core.utils.CameraUtils;
 import com.faceunity.core.utils.FULogger;
 import com.faceunity.nama.listener.FURendererListener;
+import com.faceunity.nama.utils.FuDeviceUtils;
 
 
 import java.io.File;
@@ -62,6 +63,7 @@ public class FURenderer extends IFURenderer {
     /* AI道具*/
     private String BUNDLE_AI_FACE = "model" + File.separator + "ai_face_processor.bundle";
     private String BUNDLE_AI_HUMAN = "model" + File.separator + "ai_human_processor.bundle";
+
 
     /* 相机角度-朝向映射 */
     private HashMap<Integer, CameraFacingEnum> cameraOrientationMap = new HashMap<>();
