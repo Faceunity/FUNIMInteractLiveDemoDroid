@@ -48,13 +48,11 @@ import com.faceunity.core.enumeration.FUTransformMatrixEnum;
 import com.faceunity.core.faceunity.FUAIKit;
 import com.faceunity.core.faceunity.FURenderKit;
 import com.faceunity.core.model.facebeauty.FaceBeautyBlurTypeEnum;
-import com.faceunity.core.utils.CameraUtils;
 import com.faceunity.nama.FUConfig;
 import com.faceunity.nama.FURenderer;
 import com.faceunity.nama.data.FaceUnityDataFactory;
 import com.faceunity.nama.listener.FURendererListener;
 import com.faceunity.nama.ui.FaceUnityView;
-//import com.faceunity.nama.utils.CameraUtils;
 import com.faceunity.nama.utils.FuDeviceUtils;
 import com.faceunity.wrapper.faceunity;
 import com.netease.nim.chatroom.demo.DemoCache;
@@ -147,7 +145,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
 
 /**
@@ -2170,7 +2167,7 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
         /**
          * 视频数据外部处理接口, 此接口需要同步执行. 操作运行在视频数据发送线程上,处理速度过慢会导致帧率过低
          * @param input          待处理数据
-         * @param outputFrames   {@link com.netease.nrtc.sdk.video.VideoFrame[0]} 处理后的数据，{@link com.netease.nrtc.sdk.video.VideoFrame[1]} 处理后的镜像数据。
+         * @param outputFrames   {@link VideoFrame[0]} 处理后的数据，{@link VideoFrame[1]} 处理后的镜像数据。
          *                       在实际使用过程中，用户需要根据自己需求来决定是否真正需要输入镜像数据，一般在使用到水印等外部处理时才会需要真正输入两路数据，其他情况可以忽略此参数。
          * @param videoFilterParameter 待处理数据的参数
          * @return 返回true成功
@@ -3442,7 +3439,7 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
             if (Math.abs(x) > Math.abs(y)) {
                 mFURenderer.setDeviceOrientation(x > 0 ? 270 : 270);
             } else {
-                mFURenderer.setDeviceOrientation(y > 0 ? 180 : 180);
+                mFURenderer.setDeviceOrientation(y > 0 ? 0 : 0);
             }
         }
     }
