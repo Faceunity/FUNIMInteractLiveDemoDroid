@@ -201,7 +201,7 @@ public class CameraRenderer extends AVChatExternalVideoCapturer implements Camer
 
             if (mIsFuBeautyOpen) {
 
-                if (FUConfig.DEVICE_LEVEL > FuDeviceUtils.DEVICE_LEVEL_MID) {
+                if (FUConfig.DEVICE_LEVEL > FuDeviceUtils.DEVICE_LEVEL_TWO) {
                     cheekFaceNum();
                 }
 
