@@ -21,5 +21,5 @@
         android:layout_marginBottom="@dimen/x30"
         android:text="@string/recover"
         android:textColor="@color/tv_main_color_selector"
-        android:textSize="@dimen/ftext_size_20" />
+        android:textSize="@dimen/text_size_20" />
 </LinearLayout>
