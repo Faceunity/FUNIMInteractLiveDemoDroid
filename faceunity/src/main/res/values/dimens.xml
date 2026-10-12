@@ -9,6 +9,6 @@
     <dimen name="text_size_26">13sp</dimen>
     <dimen name="text_size_24">12sp</dimen>
     <dimen name="text_size_22">11sp</dimen>
-    <dimen name="ftext_size_20">10sp</dimen>
+    <dimen name="text_size_20">10sp</dimen>
 
 </resources>

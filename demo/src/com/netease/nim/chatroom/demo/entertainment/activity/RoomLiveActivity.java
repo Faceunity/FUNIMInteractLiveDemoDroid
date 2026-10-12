@@ -2209,7 +2209,7 @@ public class RoomLiveActivity extends LivePlayerBaseActivity implements Interact
 //                     数据回传
                     try {
 
-                        if (FUConfig.DEVICE_LEVEL > FuDeviceUtils.DEVICE_LEVEL_MID) {
+                        if (FUConfig.DEVICE_LEVEL > FuDeviceUtils.DEVICE_LEVEL_TWO) {
                             cheekFaceNum();
                         }
 

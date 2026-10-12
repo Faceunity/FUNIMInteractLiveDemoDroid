@@ -20,6 +20,6 @@
         android:layout_height="@dimen/x40"
         android:layout_marginBottom="@dimen/x16"
         android:textColor="@color/tv_main_color_selector"
-        android:textSize="@dimen/ftext_size_20"  />
+        android:textSize="@dimen/text_size_20"  />
 
 </LinearLayout>

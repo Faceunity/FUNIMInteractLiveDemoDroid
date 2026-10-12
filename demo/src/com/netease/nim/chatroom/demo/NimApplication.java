@@ -39,7 +39,7 @@ public class NimApplication extends MultiDexApplication {
         nimApplication = this;
         DemoCache.setContext(this);
 
-        FUConfig.DEVICE_LEVEL = FuDeviceUtils.judgeDeviceLevelGPU();
+        FUConfig.DEVICE_LEVEL = FuDeviceUtils.judgeDeviceLevel(true);
 
         NIMClient.init(this, getLoginInfo(), getOptions());
 
