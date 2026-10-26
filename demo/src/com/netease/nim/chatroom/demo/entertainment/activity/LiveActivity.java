@@ -2546,7 +2546,7 @@ public class LiveActivity extends LivePlayerBaseActivity implements InteractionA
             AVChatManager.getInstance().setupVideoCapturer(mCameraRenderer);
             AVChatManager.getInstance().startVideoPreview();
         }
-        loadAudioEffect();
+//        loadAudioEffect();
     }
 
     private void releaseEngine() {

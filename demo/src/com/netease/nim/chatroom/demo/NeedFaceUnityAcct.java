@@ -8,6 +8,8 @@ import android.text.TextUtils;
 import android.view.View;
 import android.widget.Button;
 
+import com.netease.nim.chatroom.demo.entertainment.activity.LiveActivity;
+import com.netease.nim.chatroom.demo.entertainment.activity.LiveModeChooseActivity;
 import com.netease.nim.chatroom.demo.im.activity.WelcomeActivity;
 import com.netease.nim.chatroom.demo.utils.PreferenceUtil;
 
@@ -41,10 +43,11 @@ public class NeedFaceUnityAcct extends AppCompatActivity {
         btn_to_main.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(NeedFaceUnityAcct.this, WelcomeActivity.class);
-                PreferenceUtil.persistString(NimApplication.getInstance(), PreferenceUtil.KEY_FACEUNITY_ISON,
-                        isOn + "");
-                startActivity(intent);
+//                Intent intent = new Intent(NeedFaceUnityAcct.this, WelcomeActivity.class);
+//                PreferenceUtil.persistString(NimApplication.getInstance(), PreferenceUtil.KEY_FACEUNITY_ISON,
+//                        isOn + "");
+//                startActivity(intent);
+                LiveActivity.start(NeedFaceUnityAcct.this, true, true);
                 finish();
             }
         });
